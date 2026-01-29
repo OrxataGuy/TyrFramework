@@ -4,4 +4,3 @@ settings:
 commands:
   install: ./src/commands/install.tyr.ts
   dw: ./src/commands/dw.tyr.ts
-  di: ./src/commands/di.tyr.ts

@@ -79,3 +79,13 @@ export class PackageManager {
         this.logger.success(`Paquete ${packageName} instalado.`);
     }
 }
+
+
+/**
+ * @object PackageManagerTests
+ * @description Parámetros de pruebas para validar la funcionalidad de PackageManager.
+ */
+export const PackageManagerTests = {
+    detect: {},
+    detectCached: {}
+};

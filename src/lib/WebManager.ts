@@ -53,5 +53,15 @@ export class WebManager {
         }
     }
 
-   
 }
+
+/**
+ * @object WebManagerTests
+ * @description Parámetros de pruebas para validar la funcionalidad de WebManager.
+ */
+export const WebManagerTests = {
+    selectFromWeb: {
+        url: 'https://www.w3schools.com/',
+        selector: 'title'
+    }
+};

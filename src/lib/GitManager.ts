@@ -59,3 +59,13 @@ export class GitManager {
         await this.shell.exec(`git clone ${repoUrl}`);
     }
 }
+
+/**
+ * @object GitManagerTests
+ * @description Parámetros de pruebas para validar la funcionalidad de GitManager.
+ */
+export const GitManagerTests = {
+    init: { directory: '/tmp/tyr-git-test' },
+    addAll: { directory: '/tmp/tyr-git-test' },
+    // commit: { directory: '/tmp/tyr-git-test', message: 'test: commits from TyrFramework' }
+};

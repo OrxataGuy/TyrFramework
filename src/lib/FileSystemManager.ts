@@ -132,3 +132,17 @@ export class FileSystemManager {
         await this.write(filePath, newContent);
     }
 }
+
+/**
+ * @object FileSystemManagerTests
+ * @description Parámetros de pruebas para validar la funcionalidad de FileSystemManager.
+ */
+const testFile = '~/Projects/TyrFramework/package.json';
+
+export const FileSystemManagerTests = {
+    exists: { filePath: testFile },
+    read: { filePath: testFile },
+    write: { filePath: '/tmp/tyr-test/test-file.txt', content: 'Test content from TyrFramework' },
+    delete: { filePath: '/tmp/tyr-test/test-file.txt' },
+    ensureLine: { filePath: testFile, line: '"type": "module",' }
+};

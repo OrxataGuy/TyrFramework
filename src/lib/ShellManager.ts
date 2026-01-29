@@ -104,3 +104,14 @@ export class ShellManager {
         this.cwd = resolve(this.cwd, expandedPath);
     }
 }
+
+/**
+ * @object ShellManagerTests
+ * @description Parámetros de pruebas para validar la funcionalidad de ShellManager.
+ */
+export const ShellManagerTests = {
+    exec: { command: 'node -v' },
+    cd: { path: '/tmp' },
+    input: { question: 'Ingrese un valor de prueba:' },
+    showLoader: { message: 'Cargando prueba...' }
+};

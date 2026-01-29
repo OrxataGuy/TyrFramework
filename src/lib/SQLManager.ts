@@ -67,7 +67,7 @@ export class SQLManager {
    */
   public async searchBrokerOnDB(url: string | URL): Promise<string> {
     let urlString = url.toString();
-    
+
     if (!urlString.startsWith("http://") && !urlString.startsWith("https://")) {
       urlString = "https://" + urlString;
     }
@@ -77,24 +77,24 @@ export class SQLManager {
       urlObj = ['www', urlObj].join('.');
     }
 
-    const isWeb = urlObj.startsWith('www')  || 
-              urlObj.startsWith('horizon')  || 
-              urlObj.startsWith('ambiance') || 
-              urlObj.startsWith('panorama') || 
-              urlObj.startsWith('flow')     || 
-              urlObj.startsWith('panorama') || 
-              urlObj.startsWith('avantio')  || 
-              urlObj.startsWith('demo');
+    const isWeb = urlObj.startsWith('www') ||
+      urlObj.startsWith('horizon') ||
+      urlObj.startsWith('ambiance') ||
+      urlObj.startsWith('panorama') ||
+      urlObj.startsWith('flow') ||
+      urlObj.startsWith('panorama') ||
+      urlObj.startsWith('avantio') ||
+      urlObj.startsWith('demo');
 
 
-    const query = isWeb ? `SELECT basedir as BROKER from ftpUsers where CONCAT(prefijo, '.', dominio) = '${urlObj}'`  :`SELECT LOGIN_DS AS BROKER from CR_CANALVENTAS WHERE WEB_DS = '${urlObj}'`;
+    const query = isWeb ? `SELECT basedir as BROKER from ftpUsers where CONCAT(prefijo, '.', dominio) = '${urlObj}'` : `SELECT LOGIN_DS AS BROKER from CR_CANALVENTAS WHERE WEB_DS = '${urlObj}'`;
 
     await this.init();
 
     const result = await this.pool.request().query(query);
 
     await this.close();
-    
+
     if (!result.recordset[0] || !result.recordset[0].BROKER) {
       throw new Error(`No se encontró broker para ${urlObj}`);
     }
@@ -102,10 +102,20 @@ export class SQLManager {
     return result.recordset[0].BROKER as string;
   }
 
-   private async close(): Promise<void> {
+  private async close(): Promise<void> {
     if (this.connected && this.pool) {
-      await this.pool.close(); 
+      await this.pool.close();
       this.connected = false;
     }
   }
 }
+
+/**
+ * @object SQLManagerTests
+ * @description Parámetros de pruebas para validar la funcionalidad de SQLManager.
+ */
+export const SQLManagerTests = {
+    init: {},
+    select: { query: 'SELECT 1 as test_value' },
+    connectionPool: { queries: ['SELECT 1 as q1', 'SELECT 2 as q2', 'SELECT 3 as q3'] }
+};

@@ -1,20 +1,26 @@
 {
-  "name": "Tyr Framework CLI",
+  "name": "tyr.framework.cli",
   "version": "1.0.0",
   "type": "module",
   "bin": {
     "tyr": "./bin/tyr.ts"
   },
   "scripts": {
-    "install": "tyr install",
     "test": "vitest run",
     "test:smoke": "tsx tests/test-runner.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "prepare": "husky"
+    "prepare": ""
   },
-  "keywords": ["CLI", "scripting", "system management", "task scheduling", "DevOps", "UNIX"],
+  "keywords": [
+    "CLI",
+    "scripting",
+    "system management",
+    "task scheduling",
+    "DevOps",
+    "UNIX"
+  ],
   "author": "Manel Andreu Pérez",
   "license": "MIT",
   "description": "Tyr is a TypeScript-based environment that resolves this fragmentation through the creation, execution, and automation of CLI tools. Its architecture is built on dependency injection: the \"Kernel\" provides an execution context where \"Managers\" expose their functionality via an auto-generated API. Thanks to a code introspection system, the environment analyzes types and documentation in real-time, offering the programmer a ready-to-use catalog of tools. This completely decouples command logic from underlying libraries, allowing developers to invoke complex functions without needing to manage external packages or configurations.",
@@ -25,7 +31,7 @@
     "chalk": "^5.6.2",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.3",
-    "execa": "^9.6.1",
+    "execa": "^6.1.0",
     "find-config": "^1.0.0",
     "inquirer": "^13.2.1",
     "js-yaml": "^4.1.1",

@@ -52,3 +52,12 @@ export class SystemManager {
         this.logger.success("Basura eliminada.");
     }
 }
+
+/**
+ * @object SystemManagerTests
+ * @description Parámetros de pruebas para validar la funcionalidad de SystemManager.
+ */
+export const SystemManagerTests = {
+    killPort: { port: 9999 },
+    // nukeNodeModules: { directory: '/tmp/tyr-npm-test' }
+};

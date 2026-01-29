@@ -7,7 +7,7 @@ export default ({ task, fail, logger, fs, shell }: TyrContext) => {
             fail('No se pudo determinar el directorio HOME del usuario');
         }
 
-        const tfgPath = `${homeDir}/Documents/Archivo/tfg`;
+        const tfgPath = `${homeDir}/Projects/TyrFramework`;
         const addonsPath = `${tfgPath}/local`;
         const aliasesTemplatePath = `${homeDir}/avantio/framework/core/include/bin/aliases.template.sh`;
         const pluginsTemplatePath = `${homeDir}/avantio/framework/core/include/bin/plugins.template.sh`;
@@ -17,7 +17,7 @@ export default ({ task, fail, logger, fs, shell }: TyrContext) => {
             if (!fs.exists(tfgPath)) {
                 fail(
                     `El directorio ${tfgPath} no existe`,
-                    'Asegúrate de que la ruta ~/Documents/Archivo/tfg existe'
+                    'Asegúrate de que la ruta ~/Projects/TyrFramework existe'
                 );
             }
             logger.success(`Directorio TFG encontrado: ${tfgPath}`);
@@ -73,7 +73,7 @@ export default ({ task, fail, logger, fs, shell }: TyrContext) => {
             const tyreAliasDefinition = `
 # Alias para Tyr Framework (TFG)
 tyre() {
-    cd ~/Documents/Archivo/tfg && nvm use 23 > /dev/null && npm link > /dev/null && tyr "$@"
+    cd ~/Projects/TyrFramework && nvm use 23 > /dev/null && npm link > /dev/null && tyr "$@"
 }
 `;
 

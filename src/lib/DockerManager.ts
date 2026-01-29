@@ -1,5 +1,6 @@
 import { ShellManager } from './ShellManager.js';
-import { Logger } from '../core/Container.js'; 
+import { Logger } from '../core/Container.js';
+import { execa } from 'execa';
 
 export interface DockerRunOptions {
     image: string;
@@ -103,3 +104,23 @@ export class DockerManager {
         this.logger.success('Stack desplegado correctamente.');
     }
 }
+
+
+/**
+ * @object DockerManagerTests
+ * @description Parámetros de pruebas para validar la funcionalidad de DockerManager.
+ * 
+ * HOJA DE RUTA DE TESTS:
+ * =====================
+ * 
+ * 1. isRunning - Verifica que Docker está instalado y el daemon activo
+ * 2. run - Despliega un contenedor ligero de prueba
+ * 3. containerExists - Verifica que el contenedor de prueba existe
+ * 4. composeUp - Valida sintaxis de docker-compose.yml
+ */
+export const DockerManagerTests = {
+    isRunning: {},
+    run: { image: 'alpine:latest', name: 'tyr-test-container', env: [] },
+    containerExists: { name: 'tyr-test-container' },
+    composeUp: { file: 'docker-compose.yml' }
+};

@@ -551,12 +551,10 @@ class TyrTestRunner {
             const testEntries = Object.entries(manager.tests);
             const testResults: { name: string; status: 'PASS' | 'FAIL'; error?: string }[] = [];
 
-            // Ejecutar cada test definido en los TestParams
             for (const [testName, testParams] of testEntries) {
                 console.log(`   🧪 ${testName}...`);
 
                 try {
-                    // Obtener el método del manager
                     const method = (manager.instance as any)[testName];
 
                     if (typeof method !== 'function') {
@@ -565,33 +563,21 @@ class TyrTestRunner {
                         continue;
                     }
 
-                    // Ejecutar el método con los parámetros definidos en los Tests
-                    // Si los parámetros están vacíos, ejecutar sin argumentos
-                    // Si tienen propiedades, pasarlas como objeto (destructurado si tiene una propiedad) o como argumentos
                     const paramValues = Object.values(testParams as Record<string, unknown>);
                     const hasParams = paramValues.length > 0;
 
                     let result: unknown;
                     if (hasParams) {
-                        // Si es un único objeto, pasarlo como tal
                         const funcStr = method.toString();
                         const params = funcStr.match(/\(([^)]*)\)/)?.[1]?.trim() || '';
                         const isDestructured = params.startsWith('{');
 
-                    console.log('testParams:', testParams);
-                    console.log('isDestructured:', isDestructured);
-                    console.log('Passing:', isDestructured ? testParams : Object.values(testParams));
-
-
                         if (isDestructured) {
-                            // Función con desestructuración: pasar el objeto completo
                             result = await method.call(manager.instance, testParams);
                         } else {
-                            // Función con parámetros normales: pasar valores separados
                             result = await method.apply(manager.instance, Object.values(testParams));
                         }
                     } else {
-                        // Sin parámetros
                         result = await method.call(manager.instance);
                     }
 

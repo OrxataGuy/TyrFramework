@@ -62,6 +62,6 @@ export class WebManager {
 export const WebManagerTests = {
     selectFromWeb: {
         url: 'https://www.w3schools.com/',
-        selector: 'title'
+        selector: ($: any) => $('title').text()
     }
 };

@@ -65,7 +65,7 @@ export class FileSystemManager {
     public async delete(filePath: string): Promise<void> {
         const resolvedPath = this.resolvePath(filePath);
 
-        if (await this.exists(resolvedPath)) {
+        if (this.exists(resolvedPath)) {
             await fs.unlink(resolvedPath);
             this.logger.success(`Archivo eliminado: ${filePath}`);
         } else {
@@ -84,13 +84,19 @@ export class FileSystemManager {
     public async write(filePath: string, content: string): Promise<void> {
         const resolvedPath = this.resolvePath(filePath);
 
-        if (await this.exists(resolvedPath)) {
+        // Crear directorio padre si no existe
+        const dir = path.dirname(resolvedPath);
+        await fs.mkdir(dir, { recursive: true });
+
+        // Backup si el archivo ya existe
+        if (this.exists(resolvedPath)) {
             const backupPath = `${resolvedPath}.bak`;
             await fs.copyFile(resolvedPath, backupPath);
             this.logger.info(`Backup creado en: ${backupPath}`);
         }
 
-        await fs.writeFile(filePath, content, 'utf-8');
+        // Escribir usando la ruta resuelta
+        await fs.writeFile(resolvedPath, content, 'utf-8');
         this.logger.success(`Archivo escrito: ${filePath}`);
     }
 
@@ -104,9 +110,9 @@ export class FileSystemManager {
     public async createDir(dirPath: string): Promise<void> {
         const resolvedPath = this.resolvePath(dirPath);
 
-        if (!await this.exists(resolvedPath)) {
+        if (!this.exists(resolvedPath)) {
             await fs.mkdir(resolvedPath, { recursive: true });
-            this.logger.info(`Directorio creado: ${path}`);
+            this.logger.info(`Directorio creado: ${dirPath}`);
         }
     }
 
@@ -138,11 +144,12 @@ export class FileSystemManager {
  * @description Parámetros de pruebas para validar la funcionalidad de FileSystemManager.
  */
 const testFile = '~/Projects/TyrFramework/package.json';
+const testFileWrite = '~/Projects/TyrFramework/tests/foo.test.txt';
 
 export const FileSystemManagerTests = {
     exists: { filePath: testFile },
     read: { filePath: testFile },
-    write: { filePath: '/tmp/tyr-test/test-file.txt', content: 'Test content from TyrFramework' },
-    delete: { filePath: '/tmp/tyr-test/test-file.txt' },
+    write: { filePath: testFileWrite, content: 'Test content from TyrFramework' },
+    delete: { filePath: testFileWrite },
     ensureLine: { filePath: testFile, line: '"type": "module",' }
 };

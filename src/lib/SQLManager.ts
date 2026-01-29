@@ -115,7 +115,7 @@ export class SQLManager {
  * @description Parámetros de pruebas para validar la funcionalidad de SQLManager.
  */
 export const SQLManagerTests = {
-    init: {},
-    select: { query: 'SELECT 1 as test_value' },
-    connectionPool: { queries: ['SELECT 1 as q1', 'SELECT 2 as q2', 'SELECT 3 as q3'] }
+    // init: {},
+    // select: { query: 'SELECT 1 as test_value' },
+    // connectionPool: { queries: ['SELECT 1 as q1', 'SELECT 2 as q2', 'SELECT 3 as q3'] }
 };

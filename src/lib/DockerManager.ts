@@ -5,7 +5,7 @@ import { execa } from 'execa';
 export interface DockerRunOptions {
     image: string;
     name: string;
-    port?: string; 
+    port?: string;
     env?: string[];
 }
 
@@ -62,11 +62,11 @@ export class DockerManager {
         }
 
         const envFlags = env.map(e => `-e ${e}`).join(' ');
-        
+
         const portMapping = port ? `-p ${port}` : '';
 
         const cmd = `docker run -d --name ${name} ${portMapping} ${envFlags} ${image}`;
-        
+
         const containerId = await this.shell.exec(cmd);
         this.logger.success(`Contenedor activo. ID: ${containerId.substring(0, 12)}`);
     }
@@ -120,7 +120,11 @@ export class DockerManager {
  */
 export const DockerManagerTests = {
     isRunning: {},
-    run: { image: 'alpine:latest', name: 'tyr-test-container', env: [] },
+    run: { 
+        image: 'alpine:latest', 
+        name: 'tyr-test-container', 
+        env: [] 
+    },
     containerExists: { name: 'tyr-test-container' },
-    composeUp: { file: 'docker-compose.yml' }
+    // composeUp: { file: 'docker-compose.yml' } // No sirve probarlo si no hay siempre un docker-compose.yml
 };

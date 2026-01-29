@@ -183,7 +183,7 @@ class TyrTestRunner {
                     '/avantio/framework',
                     '/.zshrc'
                 ];
-                
+
                 // Verificar si el path contiene alguno de los requeridos
                 const isRequired = requiredPaths.some(p => filePath.includes(p));
                 const exists = isRequired ? true : Math.random() > 0.3; // Si es requerido, siempre true
@@ -194,7 +194,7 @@ class TyrTestRunner {
                 // Los templates siempre deben existir y retornar contenido válido
                 const isTemplate = filePath.includes('template');
                 const isConfig = filePath.includes('config') || filePath.includes('zshrc') || filePath.includes('.sh');
-                
+
                 if (isTemplate || isConfig) {
                     // Generar contenido realista para templates y configs
                     let content = '';
@@ -210,7 +210,7 @@ class TyrTestRunner {
                     console.log(`   📖 read("${filePath}") → ${content.split('\n').length} lines`);
                     return content;
                 }
-                
+
                 // Para otros archivos, tener 80% de probabilidad de éxito
                 const exists = Math.random() > 0.2;
                 if (exists) {
@@ -501,64 +501,64 @@ class TyrTestRunner {
         // Crear instancias de managers con el logger mock
         const mockLogger = this.mockContext.logger;
         const mockShell = new ShellManager();
-        
+
         const managers = [
-            { 
-                name: 'ShellManager', 
+            {
+                name: 'ShellManager',
                 instance: new ShellManager(),
-                tests: ShellManagerTests 
+                tests: ShellManagerTests
             },
-            { 
-                name: 'FileSystemManager', 
+            {
+                name: 'FileSystemManager',
                 instance: new FileSystemManager(mockLogger),
-                tests: FileSystemManagerTests 
+                tests: FileSystemManagerTests
             },
-            { 
-                name: 'DockerManager', 
+            {
+                name: 'DockerManager',
                 instance: new DockerManager(mockShell, mockLogger),
-                tests: DockerManagerTests 
+                tests: DockerManagerTests
             },
-            { 
-                name: 'GitManager', 
+            {
+                name: 'GitManager',
                 instance: new GitManager(mockShell, mockLogger),
-                tests: GitManagerTests 
+                tests: GitManagerTests
             },
-            { 
-                name: 'PackageManager', 
+            {
+                name: 'PackageManager',
                 instance: new PackageManager(mockShell, mockLogger),
-                tests: PackageManagerTests 
+                tests: PackageManagerTests
             },
-            { 
-                name: 'SQLManager', 
+            {
+                name: 'SQLManager',
                 instance: new SQLManager(),
-                tests: SQLManagerTests 
+                tests: SQLManagerTests
             },
-            { 
-                name: 'SystemManager', 
+            {
+                name: 'SystemManager',
                 instance: new SystemManager(mockShell, mockLogger),
-                tests: SystemManagerTests 
+                tests: SystemManagerTests
             },
-            { 
-                name: 'WebManager', 
+            {
+                name: 'WebManager',
                 instance: new WebManager(mockLogger),
-                tests: WebManagerTests 
+                tests: WebManagerTests
             }
         ];
 
         for (const manager of managers) {
             console.log(`\n📦 ${manager.name}:`);
-            
+
             const testEntries = Object.entries(manager.tests);
             const testResults: { name: string; status: 'PASS' | 'FAIL'; error?: string }[] = [];
-            
+
             // Ejecutar cada test definido en los TestParams
             for (const [testName, testParams] of testEntries) {
                 console.log(`   🧪 ${testName}...`);
-                
+
                 try {
                     // Obtener el método del manager
                     const method = (manager.instance as any)[testName];
-                    
+
                     if (typeof method !== 'function') {
                         console.log(`      ⚠️  No es una función (propiedades: ${Object.keys(testParams).join(', ')})`);
                         testResults.push({ name: testName, status: 'FAIL', error: 'No es una función' });
@@ -570,16 +570,31 @@ class TyrTestRunner {
                     // Si tienen propiedades, pasarlas como objeto (destructurado si tiene una propiedad) o como argumentos
                     const paramValues = Object.values(testParams as Record<string, unknown>);
                     const hasParams = paramValues.length > 0;
-                    
+
                     let result: unknown;
                     if (hasParams) {
                         // Si es un único objeto, pasarlo como tal
-                        result = await method.call(manager.instance, testParams);
+                        const funcStr = method.toString();
+                        const params = funcStr.match(/\(([^)]*)\)/)?.[1]?.trim() || '';
+                        const isDestructured = params.startsWith('{');
+
+                    console.log('testParams:', testParams);
+                    console.log('isDestructured:', isDestructured);
+                    console.log('Passing:', isDestructured ? testParams : Object.values(testParams));
+
+
+                        if (isDestructured) {
+                            // Función con desestructuración: pasar el objeto completo
+                            result = await method.call(manager.instance, testParams);
+                        } else {
+                            // Función con parámetros normales: pasar valores separados
+                            result = await method.apply(manager.instance, Object.values(testParams));
+                        }
                     } else {
                         // Sin parámetros
                         result = await method.call(manager.instance);
                     }
-                    
+
                     console.log(`      ✅ ${testName} passed`);
                     testResults.push({ name: testName, status: 'PASS' });
                 } catch (testError: unknown) {
@@ -589,17 +604,17 @@ class TyrTestRunner {
                     testResults.push({ name: testName, status: 'FAIL', error: errorMsg });
                 }
             }
-            
+
             // Determinar el estado general del manager basado en los resultados individuales
             const failedTests = testResults.filter(r => r.status === 'FAIL');
             const passedTests = testResults.filter(r => r.status === 'PASS');
             const overallStatus = failedTests.length === 0 ? 'PASS' : 'FAIL';
-            
+
             const summary = `${passedTests.length}/${testResults.length} tests passed`;
-            const errorDetails = failedTests.length > 0 
+            const errorDetails = failedTests.length > 0
                 ? failedTests.map(f => `${f.name}: ${f.error}`).join('; ')
                 : undefined;
-            
+
             this.results.push({
                 command: `${manager.name}`,
                 status: overallStatus,
@@ -689,7 +704,7 @@ class TyrTestRunner {
         logContent += `${'═'.repeat(60)}\n`;
         logContent += `  TYR FRAMEWORK - TEST RESULTS LOG\n`;
         logContent += `${'═'.repeat(60)}\n\n`;
-        
+
         logContent += `📋 INFORMACIÓN DEL TEST\n`;
         logContent += `${'-'.repeat(60)}\n`;
         logContent += `Fecha/Hora:     ${new Date().toLocaleString()}\n`;

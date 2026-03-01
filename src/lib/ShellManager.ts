@@ -2,11 +2,12 @@ import { execa } from 'execa';
 import { resolve } from 'path';
 import { homedir } from 'os';
 import inquirer from 'inquirer';
-import { TyrError } from '../core/TyrError';
+
+import { TyrError } from '../core/TyrError.js';
 
 /**
  * @class ShellManager
- * @description Ejecutor de comandos de terminal. Mantiene el estado del directorio de trabajo (CWD) para encadenar comandos en carpetas específicas.
+ * @description Terminal command executor. Maintains the working directory (CWD) state to chain commands in specific folders.
  */
 export class ShellManager {
     private cwd: string;
@@ -17,9 +18,9 @@ export class ShellManager {
 
     /**
      * @method exec
-     * @description Ejecuta un comando en la shell del sistema y devuelve la salida estándar.
-     * @param {string} command - El comando completo a ejecutar.
-     * @returns {Promise<string>} El output (stdout) del comando limpio de espacios extra.
+     * @description Executes a command in the system shell and returns the standard output.
+     * @param {string} command - The full command to execute.
+     * @returns {Promise<string>} The command output (stdout) trimmed of extra whitespace.
      * @example
      * const version = await shell.exec('node -v');
      */
@@ -27,19 +28,19 @@ export class ShellManager {
         try {
             const result = await execa(command, { shell: true, cwd: this.cwd });
             return result.stdout.trim();
-        } catch (error: unknown) {
-            throw new TyrError(`Se ha producido un error al ejecutar el comando: ${command}`, error);
+        } catch (e) {
+            throw new TyrError(`An error occurred while executing the command: ${command}`, e);
         }
     }
 
-     /**
-     * @method showLoader
-     * @description Muestra un loader en terminal.
-     * @param {string} message - Texto informativo.
-     * @returns {void} 
-     * @example
-     * shell.showLoader('Cargando...');
-     */
+    /**
+    * @method showLoader
+    * @description Displays a spinner loader in the terminal.
+    * @param {string} message - Informational text to show alongside the spinner.
+    * @returns {void}
+    * @example
+    * shell.showLoader('Loading...');
+    */
     public showLoader = (message: string): { stop: () => void } => {
         const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
         let i = 0;
@@ -63,9 +64,9 @@ export class ShellManager {
 
     /**
      * @method input
-     * @description Recoge un valor de CLI.
-     * @param {string} question - Texto informativo.
-     * @returns {Promise<string>} Valor recogido.
+     * @description Prompts the user for a value via CLI.
+     * @param {string} question - Informational text shown as the prompt.
+     * @returns {Promise<string>} The value entered by the user.
      * @example
      * const name = await shell.input("What's your name?");
      */
@@ -80,18 +81,18 @@ export class ShellManager {
             ]);
 
             return result.value.trim();
-        } catch (error: unknown) {
-            throw new TyrError(`Se ha producido un error al lanzar la pregunta: ${question}`, error);
+        } catch (e) {
+            throw new TyrError(`An error occurred while prompting the question: ${question}`, e);
         }
     }
 
     /**
      * @method cd
-     * @description Cambia el directorio de trabajo interno para los siguientes comandos ejecutados por esta instancia.
-     * @param {string} path - Ruta absoluta o relativa a donde moverse.
+     * @description Changes the internal working directory for subsequent commands executed by this instance.
+     * @param {string} path - Absolute or relative path to change to.
      * @example
      * shell.cd('./backend');
-     * await shell.exec('npm install'); // Se ejecuta dentro de /backend
+     * await shell.exec('npm install'); // Runs inside /backend
      */
     public cd(path: string): void {
         let expandedPath = path;
@@ -107,11 +108,11 @@ export class ShellManager {
 
 /**
  * @object ShellManagerTests
- * @description Parámetros de pruebas para validar la funcionalidad de ShellManager.
+ * @description Test parameters to validate ShellManager functionality.
  */
 export const ShellManagerTests = {
     exec: { command: 'node -v' },
     cd: { path: '/tmp' },
-    input: { question: 'Ingrese un valor de prueba:' },
-    showLoader: { message: 'Cargando prueba...' }
+    input: { question: 'Enter a test value:' },
+    showLoader: { message: 'Loading test...' }
 };

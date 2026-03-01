@@ -55,7 +55,7 @@ export class Kernel {
             const fileContents = fs.readFileSync(configPath, 'utf8');
             this.config = yaml.load(fileContents) as TyrConfig;
         } catch (error) {
-            console.error(`Error crítico: No se encuentra la configuración en ${configPath}`);
+            console.error(`Critical error: configuration not found at ${configPath}`);
             process.exit(1);
         }
     }
@@ -64,7 +64,7 @@ export class Kernel {
         const commandName = args[0];
 
         if (!commandName) {
-            console.log("Por favor, introduce un comando. Ej: tyr help");
+            console.log("Please provide a command. Example: tyr help");
             return;
         }
 
@@ -83,9 +83,9 @@ export class Kernel {
 
                 if (!next) {
                     throw new TyrError(
-                        `Falló la tarea: "${description}"`,
+                        `Task failed: "${description}"`,
                         e,
-                        "Revisa los logs anteriores o la configuración."
+                        "Check the previous logs or the configuration."
                     );
                 }
             }
@@ -96,7 +96,7 @@ export class Kernel {
             frameworkRoot: this.frameworkRoot,
             run: runInternal,
             task,
-            fail: (msg: string, suggestion?: string) => { throw new TyrError(msg, null, suggestion); }
+            fail: (msg: string, suggestion?: string) => { throw new TyrError(msg, null, suggestion, commandName); }
         };
 
         const systemCommands: Record<string, CommandFactory> = {
@@ -112,7 +112,7 @@ export class Kernel {
         }
 
         if (!this.config) {
-            throw new Error("El Kernel no ha sido inicializado (ejecuta boot primero).");
+            throw new Error("Kernel has not been initialized (run boot first).");
         }
 
         let scriptPath = this.config.commands[commandName];
@@ -123,7 +123,7 @@ export class Kernel {
         }
 
         if (!scriptPath) {
-            context.logger?.error(`Comando '${commandName}' no encontrado.`);
+            context.logger?.error(`Command '${commandName}' not found.`);
             return;
         }
 
@@ -133,7 +133,7 @@ export class Kernel {
             const module = await import(absolutePath);
 
             if (typeof module.default !== 'function') {
-                throw new Error(`El archivo ${scriptPath} no exporta una función por defecto.`);
+                throw new Error(`File ${scriptPath} does not export a default function.`);
             }
 
             const commandFactory: CommandFactory = module.default;
@@ -146,52 +146,20 @@ export class Kernel {
         }
     }
 
-    private handleError(error: unknown, args: string[]) {
-        let isDebug = args.includes('--debug');
-
-        this.container.get().logger.error("Ups! Ha ocurrido un error.");
+    private handleError(error: unknown, args: string[]): void {
+        const isDebug = args.includes('--debug');
+        const logger = this.container.get().logger;
+        const commandName = args[0];
 
         if (error instanceof TyrError) {
-            console.error(`↳  ${error.message}`);
-
-            if (error.originalError) {
-                const techMsg = this.extractErrorMessage(error.originalError);
-                console.log(`      ↳ Caused by: ${techMsg}`);
-            }
-
-            if (error.suggestion) {
-                console.warn(`\n   Sugerencia: ${error.suggestion}`);
-            }
-
-            if (isDebug && error.originalError instanceof Error) {
-                console.log('\n--- Stack Trace Original ---');
-                console.log(error.originalError.stack);
-            } else if (isDebug) {
-                console.log('\n--- Stack Trace Original ---');
-                console.log(error);
-            }
-
-        } else if (error instanceof Error) {
-            console.error(`   Error Crítico no controlado: ${error.message}`);
-            if (isDebug) console.log(error.stack);
+            const enriched = error.commandName
+                ? error
+                : new TyrError(error.message, error.originalError, error.suggestion, commandName);
+            enriched.handle(isDebug, logger);
         } else {
-            console.error('   Error desconocido:', error);
-        }
-
-        if (!isDebug) {
-            console.log('\n(Usa --debug para ver el stack trace completo)');
+            (new TyrError('Unhandled critical error', error, undefined, commandName)).handle(isDebug, logger);
         }
 
         process.exit(1);
-    }
-
-    private extractErrorMessage(err: unknown): string {
-        if (err instanceof Error) return err.message;
-        if (typeof err === 'string') return err;
-        try {
-            return JSON.stringify(err);
-        } catch {
-            return 'Error desconocido (no serializable)';
-        }
     }
 }

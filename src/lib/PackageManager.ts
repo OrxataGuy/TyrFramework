@@ -1,10 +1,10 @@
 import { ShellManager } from './ShellManager.js';
-import { Logger } from '../core/Container.js';
+import { Logger } from '../core/Logger.js';
+import { TyrError } from '../core/TyrError.js';
 
 /**
  * @class PackageManager
- * @description Gestor agnóstico de paquetes del Sistema Operativo. 
- * Detecta automáticamente si el sistema usa apt, brew o dnf e instala software nativo.
+ * @description OS-agnostic package manager. Automatically detects whether the system uses apt, brew or dnf and installs native software.
  */
 export class PackageManager {
     private shell: ShellManager;
@@ -14,77 +14,62 @@ export class PackageManager {
     constructor(shell: ShellManager, logger: Logger) {
         this.shell = shell;
         this.logger = logger;
-        this.manager = null; 
+        this.manager = null;
     }
 
     /**
      * @method detect
-     * @description Intenta identificar el gestor de paquetes instalado en el sistema host.
-     * @returns {Promise<string>} El nombre del binario detectado ('apt', 'brew', 'dnf').
-     * @throws {Error} Si no se detecta ninguno soportado.
+     * @description Attempts to identify the package manager installed on the host system.
+     * @returns {Promise<string>} The name of the detected binary ('apt', 'brew', 'dnf').
      * @example
      * const mgr = await pkg.detect();
-     * console.log(`Usando: ${mgr}`);
+     * logger.info(`Using: ${mgr}`);
      */
     public async detect(): Promise<string> {
         if (this.manager) return this.manager;
 
-        try {
-            await this.shell.exec('which apt-get');
-            this.manager = 'apt';
-            return 'apt';
-        } catch(e) {}
+        for (const [bin, name] of [['apt-get', 'apt'], ['brew', 'brew'], ['dnf', 'dnf']] as const) {
+            try {
+                await this.shell.exec(`which ${bin}`);
+                this.manager = name;
+                return name;
+            } catch (e) {}
+        }
 
-        try {
-            await this.shell.exec('which brew');
-            this.manager = 'brew';
-            return 'brew';
-        } catch(e) {}
-
-        try {
-            await this.shell.exec('which dnf');
-            this.manager = 'dnf';
-            return 'dnf';
-        } catch(e) {}
-
-        throw new Error('No se detectó un gestor de paquetes soportado (apt/brew/dnf).');
+        throw new TyrError(
+            'No supported package manager detected.',
+            null,
+            'Make sure apt, brew or dnf is installed on your system.'
+        );
     }
 
     /**
      * @method install
-     * @description Instala un paquete del sistema usando el gestor detectado previamente.
-     * @param {string} packageName - Nombre del paquete a instalar (ej: 'nginx', 'python3').
+     * @description Installs a system package using the detected package manager.
+     * @param {string} packageName - Name of the package to install (e.g. 'nginx', 'python3').
      * @example
-     * // Instala nginx (usará sudo apt-get, brew o sudo dnf según el OS)
      * await pkg.install('nginx');
      */
     public async install(packageName: string): Promise<void> {
         const mgr = await this.detect();
-        this.logger.info(`Instalando ${packageName} usando ${mgr}...`);
+        this.logger.info(`Installing ${packageName} using ${mgr}...`);
 
-        let cmd = '';
-        switch (mgr) {
-            case 'apt': 
-                cmd = `sudo apt-get install -y ${packageName}`; 
-                break;
-            case 'brew':
-                cmd = `brew install ${packageName}`;
-                break;
-            case 'dnf':
-                cmd = `sudo dnf install -y ${packageName}`;
-                break;
+        const commands: Record<string, string> = {
+            apt: `sudo apt-get install -y ${packageName}`,
+            brew: `brew install ${packageName}`,
+            dnf: `sudo dnf install -y ${packageName}`,
+        };
+
+        try {
+            await this.shell.exec(commands[mgr]);
+            this.logger.success(`Package ${packageName} installed.`);
+        } catch (e) {
+            if (e instanceof TyrError) throw e;
+            throw new TyrError(`Could not install package: ${packageName}`, e, `Try running the install command manually with ${mgr}.`);
         }
-
-        await this.shell.exec(cmd);
-        this.logger.success(`Paquete ${packageName} instalado.`);
     }
 }
 
-
-/**
- * @object PackageManagerTests
- * @description Parámetros de pruebas para validar la funcionalidad de PackageManager.
- */
 export const PackageManagerTests = {
     detect: {},
 };

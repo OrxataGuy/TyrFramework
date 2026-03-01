@@ -1,20 +1,14 @@
-import chalk from 'chalk';
-import { ShellManager } from '../lib/ShellManager';
-import { FileSystemManager } from '../lib/FileSystemManager';    
-import { PackageManager } from '../lib/PackageManager'; 
-import { DockerManager } from '../lib/DockerManager'; 
-import { GitManager } from '../lib/GitManager';
-import { SystemManager } from '../lib/SystemManager';
-import { SQLManager } from '../lib/SQLManager';
-import { WebManager } from '../lib/WebManager';
+import { ShellManager } from '../lib/ShellManager.js';
+import { FileSystemManager } from '../lib/FileSystemManager.js';
+import { PackageManager } from '../lib/PackageManager.js';
+import { DockerManager } from '../lib/DockerManager.js';
+import { GitManager } from '../lib/GitManager.js';
+import { SystemManager } from '../lib/SystemManager.js';
+import { SQLManager } from '../lib/SQLManager.js';
+import { WebManager } from '../lib/WebManager.js';
+import { Logger, createLogger } from './Logger.js';
 
-export interface Logger {
-    log(msg: any): void;
-    info(msg: any): void;
-    success(msg: any): void;
-    error(msg: any): void | undefined;
-    warn(msg: any): void | undefined;
-}
+export type { Logger };
 
 export interface ServiceContainer {
     logger: Logger;
@@ -36,19 +30,7 @@ export class Container {
     }
 
     public init(isDebug: boolean): void {
-        const logger: Logger = {
-            log: (...msg) => console.log(...msg),
-            info: (...msg) => console.log(chalk.blue('ℹ'), ...msg),
-            success: (...msg) => console.log(chalk.green('✔'), ...msg),
-            error: (...msg) => undefined,
-            warn: (...msg) => undefined
-        };
-
-        if (isDebug) {
-            logger.error = (...msg) => console.error(chalk.red('✖'), ...msg);
-            logger.warn = (...msg) => console.warn(chalk.yellow('⚠'), ...msg);
-        }
-
+        const logger = createLogger(isDebug);
         const shell = new ShellManager();
         const db = new SQLManager();
 
@@ -61,15 +43,14 @@ export class Container {
             pkg: new PackageManager(shell, logger),
             docker: new DockerManager(shell, logger),
             git: new GitManager(shell, logger),
-            sys: new SystemManager(shell, logger)
+            sys: new SystemManager(shell, logger),
         };
     }
 
     public get(): ServiceContainer {
         if (!this.services.logger) {
-            throw new Error("El contenedor no ha sido inicializado. Ejecuta .init() primero.");
+            throw new Error('Container not initialised. Call .init() first.');
         }
-        
         return this.services as ServiceContainer;
     }
 }

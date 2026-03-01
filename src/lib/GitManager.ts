@@ -1,9 +1,10 @@
 import { ShellManager } from './ShellManager.js';
-import { Logger } from '../core/Container.js';
+import { Logger } from '../core/Logger.js';
+import { TyrError } from '../core/TyrError.js';
 
 /**
  * @class GitManager
- * @description Wrapper para operaciones comunes de Git. Automatiza la inicialización, commits y clonado de repositorios.
+ * @description Wrapper for common Git operations. Automates repository initialization, commits and cloning.
  */
 export class GitManager {
     private shell: ShellManager;
@@ -16,18 +17,19 @@ export class GitManager {
 
     /**
      * @method init
-     * @description Inicializa un repositorio Git en el directorio actual y renombra la rama principal a 'main'.
+     * @description Initializes a Git repository in the current directory and renames the default branch to 'main'.
      * @example
      * await git.init();
      */
     public async init(): Promise<void> {
-        await this.shell.exec('git init');
-        try { await this.shell.exec('git branch -M main'); } catch(e) {}
+        try { await this.shell.exec('git init'); await this.shell.exec('git branch -M main'); } catch (e) {
+            throw new TyrError(`Could not init git repository`, e, 'Check if the current directory still exists.');
+        }
     }
 
     /**
      * @method addAll
-     * @description Añade todos los archivos al stage (git add .).
+     * @description Stages all files in the current directory (git add .).
      * @example
      * await git.addAll();
      */
@@ -37,35 +39,38 @@ export class GitManager {
 
     /**
      * @method commit
-     * @description Realiza un commit con el mensaje proporcionado.
-     * @param {string} message - El mensaje del commit.
+     * @description Creates a commit with the provided message.
+     * @param {string} message - The commit message.
      * @example
-     * await git.commit("feat: estructura inicial del proyecto");
+     * await git.commit("feat: initial project structure");
      */
     public async commit(message: string): Promise<void> {
         await this.shell.exec(`git commit -m "${message}"`);
-        this.logger.success(`Commit realizado: "${message}"`);
+        this.logger.success(`Commit created: "${message}"`);
     }
 
     /**
      * @method clone
-     * @description Clona un repositorio remoto en el directorio actual.
-     * @param {string} repoUrl - La URL HTTPS o SSH del repositorio.
+     * @description Clones a remote repository into the current directory.
+     * @param {string} repoUrl - The HTTPS or SSH URL of the repository.
      * @example
-     * await git.clone('https://github.com/usuario/repo.git');
+     * await git.clone('https://github.com/user/repo.git');
      */
     public async clone(repoUrl: string): Promise<void> {
-        this.logger.info(`Clonando ${repoUrl}...`);
-        await this.shell.exec(`git clone ${repoUrl}`);
+        this.logger.info(`Cloning ${repoUrl}...`);
+        try {
+            await this.shell.exec(`git clone ${repoUrl}`);
+        } catch (e) {
+            throw new TyrError(`Could not find the repository ` + repoUrl, e, 'Check if the repository exists or if you have the right permissions to clone it.');
+        }
     }
 }
 
 /**
  * @object GitManagerTests
- * @description Parámetros de pruebas para validar la funcionalidad de GitManager.
+ * @description Test parameters to validate GitManager functionality.
  */
 export const GitManagerTests = {
     init: { directory: '/tmp/tyr-git-test' },
     addAll: { directory: '/tmp/tyr-git-test' },
-    // commit: { directory: '/tmp/tyr-git-test', message: 'test: commits from TyrFramework' }
 };

@@ -1,9 +1,10 @@
 import { ShellManager } from './ShellManager.js';
-import { Logger } from '../core/Container.js';
+import { Logger } from '../core/Logger.js';
+import { TyrError } from '../core/TyrError.js';
 
 /**
  * @class SystemManager
- * @description Utilidades generales de mantenimiento y limpieza del sistema operativo.
+ * @description General OS maintenance and cleanup utilities.
  */
 export class SystemManager {
     private shell: ShellManager;
@@ -16,48 +17,46 @@ export class SystemManager {
 
     /**
      * @method killPort
-     * @description Identifica qué proceso está ocupando un puerto y lo fuerza a cerrarse (kill -9).
-     * @param {number|string} port - El puerto a liberar (ej: 3000).
-     * @returns {Promise<boolean>} True si se mató un proceso, False si el puerto estaba libre o falló.
+     * @description Identifies which process is occupying a port and force-kills it.
+     * @param {number|string} port - The port to free (e.g. 3000).
+     * @returns {Promise<boolean>} True if a process was killed, False if the port was already free.
      * @example
      * await sys.killPort(8080);
      */
     public async killPort(port: number | string): Promise<boolean> {
         try {
             const pid = await this.shell.exec(`lsof -t -i:${port}`);
-            
-            if (pid) {
-                this.logger.warn(`Puerto ${port} bloqueado por PID ${pid}. Eliminando...`);
-                await this.shell.exec(`kill -9 ${pid}`);
-                this.logger.success(`Puerto ${port} liberado.`);
-                return true;
-            }
+            if (!pid) return false;
+
+            this.logger.warn(`Port ${port} blocked by PID ${pid}. Killing...`);
+            await this.shell.exec(`kill -9 ${pid}`);
+            this.logger.success(`Port ${port} freed.`);
+            return true;
         } catch (e) {
-            return false;
+            if (e instanceof TyrError) throw e;
+            throw new TyrError(`Could not free port: ${port}`, e, 'Check that lsof is available on your system.');
         }
-        return false;
     }
 
     /**
      * @method nukeNodeModules
-     * @description Elimina radicalmente la carpeta node_modules y el package-lock.json del directorio actual.
-     * Útil para arreglar instalaciones corruptas de NPM.
+     * @description Removes node_modules and package-lock.json from the current directory.
+     * Useful for fixing corrupted NPM installations.
      * @example
      * await sys.nukeNodeModules();
-     * Luego podrías hacer: await shell.exec('npm i');
      */
     public async nukeNodeModules(): Promise<void> {
-        this.logger.info("Iniciando protocolo de limpieza de dependencias...");
-        await this.shell.exec('rm -rf node_modules package-lock.json');
-        this.logger.success("Basura eliminada.");
+        this.logger.info('Cleaning up dependencies...');
+        try {
+            await this.shell.exec('rm -rf node_modules package-lock.json');
+            this.logger.success('node_modules and package-lock.json removed.');
+        } catch (e) {
+            if (e instanceof TyrError) throw e;
+            throw new TyrError('Could not remove node_modules.', e, 'Check write permissions on the current directory.');
+        }
     }
 }
 
-/**
- * @object SystemManagerTests
- * @description Parámetros de pruebas para validar la funcionalidad de SystemManager.
- */
 export const SystemManagerTests = {
     killPort: { port: 9999 },
-    // nukeNodeModules: { directory: '/tmp/tyr-npm-test' }
 };

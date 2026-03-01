@@ -2,12 +2,14 @@ import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { homedir } from 'os';
 import path from 'path';
-import { Logger } from '../core/Container.js'; // Ajusta la ruta si es necesario
+
+import { Logger } from '../core/Logger.js';
+import { TyrError } from '../core/TyrError.js';
 
 /**
  * @class FileSystemManager
- * @description Capa de abstracción sobre el sistema de archivos (fs). 
- * Incluye utilidades de seguridad como backups automáticos al sobrescribir y escritura idempotente.
+ * @description Abstraction layer over the file system (fs).
+ * Includes safety utilities such as automatic backups when overwriting and idempotent writes.
  */
 export class FileSystemManager {
     private logger: Logger;
@@ -24,12 +26,12 @@ export class FileSystemManager {
 
     /**
      * @method exists
-     * @description Verifica de forma síncrona si un archivo o directorio existe en la ruta dada.
-     * @param {string} filePath - Ruta relativa o absoluta a verificar.
-     * @returns {Promise<boolean>} True si el archivo existe.
+     * @description Synchronously checks whether a file or directory exists at the given path.
+     * @param {string} filePath - Relative or absolute path to check.
+     * @returns {boolean} True if the file exists.
      * @example
-     * if (await fs.exists('./config.json')) {
-     *  console.log("Configuración encontrada");
+     * if (fs.exists('./config.json')) {
+     *   logger.info('Config found.');
      * }
      */
     public exists(filePath: string): boolean {
@@ -39,117 +41,112 @@ export class FileSystemManager {
 
     /**
      * @method read
-     * @description Lee el contenido de un archivo en formato UTF-8. Controla errores devolviendo null si falla.
-     * @param {string} filePath - Ruta al archivo.
-     * @returns {Promise<string|null>} El contenido del archivo o null si hubo error.
+     * @description Reads the content of a file in UTF-8 format. Returns null if the file does not exist.
+     * @param {string} filePath - Path to the file.
+     * @returns {Promise<string|null>} File content or null if it does not exist.
      * @example
      * const content = await fs.read('.env');
-     * console.log(content);
      */
     public async read(filePath: string): Promise<string | null> {
+        const resolvedPath = this.resolvePath(filePath);
         try {
-            const resolvedPath = this.resolvePath(filePath);
             return await fs.readFile(resolvedPath, 'utf-8');
         } catch (e) {
-            return null;
+            if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
+            throw new TyrError(`Could not read file: ${filePath}`, e, 'Check that the file exists and has read permissions.');
         }
     }
 
     /**
      * @method delete
-     * @description Elimina un archivo si existe. Registra el éxito o fallo en el logger.
-     * @param {string} filePath - Ruta al archivo a eliminar.
+     * @description Deletes a file if it exists.
+     * @param {string} filePath - Path to the file to delete.
      * @example
      * await fs.delete('./temp/cache.log');
      */
     public async delete(filePath: string): Promise<void> {
         const resolvedPath = this.resolvePath(filePath);
-
-        if (this.exists(resolvedPath)) {
+        if (!this.exists(resolvedPath)) {
+            throw new TyrError(`Cannot delete: file not found: ${filePath}`, null, 'Check that the path is correct.');
+        }
+        try {
             await fs.unlink(resolvedPath);
-            this.logger.success(`Archivo eliminado: ${filePath}`);
-        } else {
-            this.logger.warn(`No se pudo borrar: ${filePath} (No existe)`);
+            this.logger.success(`File deleted: ${filePath}`);
+        } catch (e) {
+            throw new TyrError(`Could not delete file: ${filePath}`, e);
         }
     }
 
     /**
      * @method write
-     * @description Escribe contenido en un archivo. Si el archivo ya existe, crea una copia .bak automáticamente antes de sobrescribir.
-     * @param {string} filePath - Ruta de destino.
-     * @param {string} content - Contenido de texto a escribir.
+     * @description Writes content to a file. If the file already exists, creates a .bak backup before overwriting.
+     * @param {string} filePath - Destination path.
+     * @param {string} content - Text content to write.
      * @example
      * await fs.write('src/config.js', 'export const port = 3000;');
      */
     public async write(filePath: string, content: string): Promise<void> {
         const resolvedPath = this.resolvePath(filePath);
+        try {
+            const dir = path.dirname(resolvedPath);
+            await fs.mkdir(dir, { recursive: true });
 
-        // Crear directorio padre si no existe
-        const dir = path.dirname(resolvedPath);
-        await fs.mkdir(dir, { recursive: true });
+            if (this.exists(resolvedPath)) {
+                const backupPath = `${resolvedPath}.bak`;
+                await fs.copyFile(resolvedPath, backupPath);
+                this.logger.info(`Backup created at: ${backupPath}`);
+            }
 
-        // Backup si el archivo ya existe
-        if (this.exists(resolvedPath)) {
-            const backupPath = `${resolvedPath}.bak`;
-            await fs.copyFile(resolvedPath, backupPath);
-            this.logger.info(`Backup creado en: ${backupPath}`);
+            await fs.writeFile(resolvedPath, content, 'utf-8');
+            this.logger.success(`File written: ${filePath}`);
+        } catch (e) {
+            if (e instanceof TyrError) throw e;
+            throw new TyrError(`Could not write file: ${filePath}`, e, 'Check write permissions on the destination directory.');
         }
-
-        // Escribir usando la ruta resuelta
-        await fs.writeFile(resolvedPath, content, 'utf-8');
-        this.logger.success(`Archivo escrito: ${filePath}`);
     }
 
     /**
      * @method createDir
-     * @description Crea un directorio de forma recursiva (como mkdir -p). No hace nada si ya existe.
-     * @param {string} path - Ruta del directorio a crear.
+     * @description Creates a directory recursively (like mkdir -p). Does nothing if it already exists.
+     * @param {string} dirPath - Path of the directory to create.
      * @example
      * await fs.createDir('src/controllers/api/v1');
      */
     public async createDir(dirPath: string): Promise<void> {
         const resolvedPath = this.resolvePath(dirPath);
-
-        if (!this.exists(resolvedPath)) {
+        if (this.exists(resolvedPath)) return;
+        try {
             await fs.mkdir(resolvedPath, { recursive: true });
-            this.logger.info(`Directorio creado: ${dirPath}`);
+            this.logger.info(`Directory created: ${dirPath}`);
+        } catch (e) {
+            throw new TyrError(`Could not create directory: ${dirPath}`, e, 'Check write permissions on the parent directory.');
         }
     }
 
     /**
      * @method ensureLine
-     * @description Asegura que una línea de texto específica exista en un archivo. Útil para añadir variables de entorno o configuraciones sin duplicarlas.
-     * @param {string} filePath - Ruta al archivo.
-     * @param {string} line - La línea exacta que se desea asegurar.
+     * @description Ensures that a specific line exists in a file. Useful for adding environment variables or config entries without duplicating them.
+     * @param {string} filePath - Path to the file.
+     * @param {string} line - The exact line to ensure.
      * @example
-     * // Añadir puerto si no está
      * await fs.ensureLine('.env', 'PORT=8080');
      */
     public async ensureLine(filePath: string, line: string): Promise<void> {
         const resolvedPath = this.resolvePath(filePath);
-
         const content = (await this.read(resolvedPath)) || '';
         if (content.includes(line)) {
-            this.logger.info(`Línea ya existente en ${filePath}. Saltando.`);
+            this.logger.info(`Line already present in ${filePath}. Skipping.`);
             return;
         }
-
         const newContent = content.endsWith('\n') ? content + line : content + '\n' + line;
         await this.write(filePath, newContent);
     }
 }
 
-/**
- * @object FileSystemManagerTests
- * @description Parámetros de pruebas para validar la funcionalidad de FileSystemManager.
- */
-const testFile = '~/Projects/TyrFramework/package.json';
-const testFileWrite = '~/Projects/TyrFramework/tests/foo.test.txt';
-
 export const FileSystemManagerTests = {
-    exists: { filePath: testFile },
-    read: { filePath: testFile },
-    write: { filePath: testFileWrite, content: 'Test content from TyrFramework' },
-    delete: { filePath: testFileWrite },
-    ensureLine: { filePath: testFile, line: '"type": "module",' }
+    exists: { filePath: '~/Projects/TyrFramework/package.json' },
+    read:   { filePath: '~/Projects/TyrFramework/package.json' },
+    write:  { filePath: '~/Projects/TyrFramework/tests/foo.test.txt', content: 'Test content from TyrFramework' },
+    delete: { filePath: '~/Projects/TyrFramework/tests/foo.test.txt' },
+    ensureLine: { filePath: '~/Projects/TyrFramework/package.json', line: '"type": "module",' },
 };

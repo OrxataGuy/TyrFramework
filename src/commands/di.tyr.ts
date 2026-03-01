@@ -106,3 +106,8 @@ export default ({ task, fail, logger, shell, db, git, fs }: TyrContext) => {
 
     };
 };
+
+
+// export const Test = {
+//     args: []
+// }

@@ -38,6 +38,7 @@ interface TestResult {
     timestamp?: number;
     executionTime?: number;
     mockOutputs?: string[];
+
 }
 
 interface TyrConfig {
@@ -117,6 +118,8 @@ class TyrTestRunner {
     private testStartTime: number = Date.now();
     private capturedLogs: string[] = [];
     private mockContext: TyrContext;
+    private currentTestModule: any = null;
+
 
     constructor() {
         this.frameworkRoot = path.resolve(__dirname, '..');
@@ -136,6 +139,9 @@ class TyrTestRunner {
             warn: (...args: unknown[]) => console.warn('[⚠️  WARN]', ...args),
         };
 
+        // Capturar this para usarlo dentro de las funciones async
+        const self = this;
+
         // Mock ShellManager - Simula ejecución real de comandos
         const mockShell: Partial<ShellManager> = {
             cd: (dir: string): void => {
@@ -143,7 +149,6 @@ class TyrTestRunner {
             },
             exec: async (cmd: string): Promise<string> => {
                 console.log(`   → exec: ${cmd}`);
-                // Simular diferentes comandos
                 if (cmd.includes('--version') || cmd.includes('-v')) {
                     const versions: Record<string, string> = {
                         'node': 'v20.10.0',
@@ -163,8 +168,37 @@ class TyrTestRunner {
             },
             input: async (prompt: string): Promise<string> => {
                 console.log(`   → user input: "${prompt}"`);
-                const responses = ['default-response', 'y', 'main', 'v1.0.0'];
-                return responses[Math.floor(Math.random() * responses.length)];
+
+                // Acceder a currentTestModule usando self en lugar de this
+                const testParams = self.currentTestModule?.Test;
+                console.log(`   → DEBUG: testParams =`, testParams ? 'EXISTS' : 'UNDEFINED');
+
+                if (testParams?.mockInputs) {
+                    // Buscar coincidencia en las claves de mockInputs
+                    for (const [key, value] of Object.entries(testParams.mockInputs)) {
+                        if (prompt.toLowerCase().includes(key.toLowerCase())) {
+                            console.log(`   → mock response: "${value}"`);
+                            return value as string;
+                        }
+                    }
+                }
+
+                // Respuestas por defecto inteligentes
+                if (prompt.toLowerCase().includes('sobrescribir') ||
+                    prompt.toLowerCase().includes('mantener') ||
+                    prompt.toLowerCase().includes('renombrar')) {
+                    console.log(`   → default response: "m" (mantener)`);
+                    return 'm';
+                }
+
+                if (prompt.toLowerCase().includes('rama') ||
+                    prompt.toLowerCase().includes('branch')) {
+                    console.log(`   → default response: "" (sin rama)`);
+                    return '';
+                }
+
+                console.log(`   → default response: "y"`);
+                return 'y';
             },
             showLoader: (msg: string) => {
                 console.log(`   ⏳ ${msg}...`);
@@ -246,6 +280,14 @@ class TyrTestRunner {
                 const affectedRows = Math.floor(Math.random() * 100) + 1;
                 const sanitized = sql.substring(0, 50) + (sql.length > 50 ? '...' : '');
                 console.log(`   📊 execute("${sanitized}") → ${affectedRows} rows affected`);
+            },
+            searchBrokerOnDB: async (url: string): Promise<string | null> => {
+                // Simular búsqueda de broker basado en URL
+                // Extraer dominio de la URL para generar un nombre de broker realista
+                const domain = url.replace(/https?:\/\/(www\.)?/, '').split('/')[0].split('.')[0];
+                const broker = domain || 'test-broker';
+                console.log(`   🔍 searchBrokerOnDB("${url}") → ${broker}`);
+                return broker;
             }
         };
 
@@ -396,7 +438,7 @@ class TyrTestRunner {
     /**
      * Prueba un comando específico
      */
-    private async testCommand(commandName: string, scriptPath: string): Promise<TestResult> {
+    private async testCommand(commandName: string, scriptPath: string, system: boolean): Promise<TestResult> {
         const result: TestResult = {
             command: commandName,
             status: 'PASS',
@@ -406,27 +448,27 @@ class TyrTestRunner {
         try {
             const absolutePath = path.resolve(this.frameworkRoot, scriptPath);
 
-            // Verificar que el archivo existe
             if (!fs.existsSync(absolutePath)) {
                 result.status = 'FAIL';
                 result.error = `Archivo no encontrado: ${absolutePath}`;
                 return result;
             }
 
-            // Intentar cargar el módulo
             console.log(`\n📦 Cargando comando: ${commandName}`);
             console.log(`   Archivo: ${scriptPath}`);
 
             const module = await import(absolutePath);
 
-            // Verificar que tiene export default
+            // ⭐ GUARDAR EL MÓDULO ACTUAL
+            this.currentTestModule = module;
+
             if (typeof module.default !== 'function') {
                 result.status = 'FAIL';
                 result.error = `El módulo no exporta una función por defecto`;
+                this.currentTestModule = null;
                 return result;
             }
 
-            // Intentar instanciar el comando con el contexto mock
             console.log(`   [OK] - Módulo cargado correctamente`);
             const commandFactory: CommandFactory = module.default;
 
@@ -436,28 +478,40 @@ class TyrTestRunner {
                 if (typeof command !== 'function') {
                     result.status = 'FAIL';
                     result.error = `La factory no devuelve una función`;
+                    this.currentTestModule = null;
                     return result;
                 }
 
                 console.log(`   [OK] - Factory ejecutada correctamente`);
 
-                // Intentar ejecutar el comando en modo dry-run (sin argumentos)
-                // Esto puede fallar por validaciones, pero no debería lanzar excepciones no controladas
-                try {
-                    console.log(`   Probando ejecución con argumentos vacíos...`);
-                    await command([]);
-                    console.log(`   [OK] - Comando ejecutado sin excepciones`);
-                } catch (e: unknown) {
-                    const error = e as Error;
-                    // Si falla por validación de argumentos, está OK
-                    if (error.message && error.message.includes('No se especificó')) {
-                        console.log(`   [OK] - Validación de argumentos funcionando`);
-                        result.details = 'Comando requiere argumentos (esperado)';
-                    } else {
-                        // Cualquier otro error puede ser problemático
+                const testParams = module.Test;
+
+                if (testParams && typeof testParams === 'object' && 'args' in testParams) {
+                    console.log(`   🧪 Ejecutando con args de prueba: [${testParams.args.join(', ')}]`);
+                    try {
+                        await command(testParams.args);
+                        console.log(`   [OK] - Comando ejecutado con args de prueba`);
+                    } catch (e: unknown) {
+                        const error = e as Error;
                         result.status = 'FAIL';
-                        result.error = `Error al ejecutar: ${error.message}`;
+                        result.error = `Error al ejecutar con args de prueba: ${error.message}`;
                         result.details = error.stack;
+                    }
+                } else {
+                    console.log(`   Probando ejecución con argumentos vacíos...`);
+                    try {
+                        await command([]);
+                        console.log(`   [OK] - Comando ejecutado sin excepciones`);
+                    } catch (e: unknown) {
+                        const error = e as Error;
+                        if (error.message && error.message.includes('No se especificó')) {
+                            console.log(`   [OK] - Validación de argumentos funcionando`);
+                            result.details = 'Comando requiere argumentos (esperado)';
+                        } else {
+                            result.status = 'FAIL';
+                            result.error = `Error al ejecutar: ${error.message}`;
+                            result.details = error.stack;
+                        }
                     }
                 }
 
@@ -466,7 +520,6 @@ class TyrTestRunner {
                 result.status = 'FAIL';
                 result.error = `Error al instanciar comando: ${error.message}`;
                 result.details = error.stack;
-                return result;
             }
 
         } catch (e: unknown) {
@@ -474,6 +527,9 @@ class TyrTestRunner {
             result.status = 'FAIL';
             result.error = `Error al cargar módulo: ${error.message}`;
             result.details = error.stack;
+        } finally {
+            // ⭐ LIMPIAR EL MÓDULO ACTUAL
+            this.currentTestModule = null;
         }
 
         return result;
@@ -487,7 +543,7 @@ class TyrTestRunner {
 
         for (const cmdName of systemCommands) {
             const scriptPath = `src/core/sys/${cmdName}.ts`;
-            const result = await this.testCommand(cmdName, scriptPath);
+            const result = await this.testCommand(cmdName, scriptPath, true);
             this.results.push(result);
         }
     }
@@ -637,7 +693,7 @@ class TyrTestRunner {
                 console.log('\n📝 Probando comandos personalizados...');
 
                 for (const [commandName, scriptPath] of Object.entries(this.config.commands)) {
-                    const result = await this.testCommand(commandName, scriptPath);
+                    const result = await this.testCommand(commandName, scriptPath, false);
                     this.results.push(result);
                 }
             }

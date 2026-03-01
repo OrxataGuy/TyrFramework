@@ -32,12 +32,12 @@ export class DockerManager {
      * const active = await docker.isRunning();
      * if (!active) console.error("Enciende Docker primero");
      */
-    public async isRunning(): Promise<boolean> {
+    public async isRunning(): Promise<string> {
         try {
-            await this.shell.exec('docker info');
-            return true;
+            let info = await this.shell.exec('docker info');
+            return info;
         } catch (e) {
-            return false;
+            return "No hay contenedores funcionando.";
         }
     }
 

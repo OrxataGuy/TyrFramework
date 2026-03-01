@@ -15,7 +15,7 @@ interface DocStructure {
     methods: DocMethod[];
 }
 
-export default function doc({ logger, frameworkRoot }: TyrContext) {
+export default function doc({ logger, frameworkRoot, run }: TyrContext) {
     return async (args: string[]) => {
         logger.info("📚 Generando documentación del sistema (TS Mode)...");
 
@@ -164,124 +164,6 @@ if (!fs.existsSync('./package.json')) {
 
         const docs = [systemDocs, ...fileDocs];
 
-        // Generar documentación detallada de todos los módulos para el prompt
-        const generateModulesDocs = () => {
-            return docs.map(module => {
-                const methodsList = module.methods.map(method => {
-                    let methodDoc = `   • ${method.name}()\n     ${method.description}`;
-                    if (method.example) {
-                        methodDoc += `\n     Ejemplo:\n     ${method.example.split('\n').map(l => '     ' + l).join('\n')}`;
-                    }
-                    return methodDoc;
-                }).join('\n\n');
-
-                return `📦 ${module.name}\n${module.description}\n\n${methodsList}`;
-            }).join('\n\n' + '='.repeat(80) + '\n\n');
-        };
-
-        const promptTemplate = `
-Necesito que crees un comando para el framework Tyr siguiendo esta estructura OBLIGATORIA:
-
-\`\`\`typescript
-import { TyrContext } from '../core/Kernel';
-
-export default ({ run, task, fail, logger, docker, fs, git, pkg, db, shell, sys, web }: TyrContext) => {
-    return async (args: string[]) => {
-        
-        // Tu implementación aquí...
-        
-    };
-};
-\`\`\`
-
-===============================================================================
-CONTEXTO DEL SISTEMA - TyrContext
-===============================================================================
-
-Las siguientes utilidades están disponibles destructurando TyrContext:
-
-🔧 UTILIDADES DEL KERNEL (siempre disponibles):
-
-- run(comando: string, args: string[]): Promise<void>
-  Ejecuta otro comando del sistema programáticamente
-  Ejemplo: await run('test', ['--verbose']);
-
-- task(descripción: string, fn: () => Promise<T>): Promise<T>
-  Envuelve operaciones críticas con manejo automático de errores
-  Ejemplo: await task('Compilando', async () => { ... });
-
-- fail(mensaje: string, sugerencia?: string): never
-  Detiene ejecución con error controlado y sugerencia opcional
-  Ejemplo: fail('Archivo no encontrado', 'Ejecuta npm init');
-
-- logger: objeto con métodos de logging
-  - logger.info(msg): Información general
-  - logger.success(msg): Operación exitosa  
-  - logger.warn(msg): Advertencia
-  - logger.error(msg): Error
-
-===============================================================================
-MÓDULOS Y FUNCIONES DISPONIBLES
-===============================================================================
-
-${generateModulesDocs()}
-
-===============================================================================
-REGLAS OBLIGATORIAS
-===============================================================================
-
-- Export DEBE ser default
-- Destructurar del TyrContext SOLO lo que necesites
-- Retornar función async que recibe args: string[]
-- Usar task() para operaciones que puedan fallar
-- Usar fail() para validaciones y errores controlados
-
-===============================================================================
-EJEMPLO DE COMANDO COMPLETO DOCUMENTADO
-===============================================================================
-
-\`\`\`typescript
-/**
- * @class
- * @description Gestiona operaciones con archivos de configuración JSON
- */
-
-import { TyrContext } from '../core/Kernel';
-
-export default ({ task, fail, logger, fs }: TyrContext) => {
-    return async (args: string[]) => {
-        if (args.length === 0) {
-            fail('No se especificó ningún archivo', 'Usa: config validate <archivo.json>');
-        }
-        
-        const [action, filepath] = args;
-        
-        if (action === 'validate') {
-            await task('Validando configuración', async () => {
-                if (!await fs.exists(filepath)) {
-                    fail(\`Archivo no encontrado: \${filepath}\`);
-                }
-                
-                const content = await fs.read(filepath);
-                try {
-                    JSON.parse(content);
-                    logger.success('✓ Configuración válida');
-                } catch (e) {
-                    fail('JSON inválido', 'Revisa la sintaxis del archivo');
-                }
-            });
-        }
-    };
-};
-\`\`\`
-
-===============================================================================
-AHORA DESCRIBE QUÉ DEBE HACER TU COMANDO
-===============================================================================
-
-[Escribe aquí tu descripción del comando que necesitas crear]
-`.trim();
-
         const html = `
         <!DOCTYPE html>
         <html>
@@ -312,7 +194,7 @@ AHORA DESCRIBE QUÉ DEBE HACER TU COMANDO
             <nav>
                 <h3 style="color: #888; text-transform: uppercase; font-size: 0.8rem;">Módulos TS</h3>
                 ${docs.map(d => `<a href="#${d.name}">📦 ${d.name.replace('.ts', '')}</a>`).join('')}
-                <a href="#prompt-template" style="margin-top: 20px; background: #4db8ff; color: #000; font-weight: bold;">🤖 Prompt Generator</a>
+                <a href="#ai-generator" style="margin-top: 20px; background: #4db8ff; color: #000; font-weight: bold;">🤖 Generador IA</a>
             </nav>
             <main>
                 ${docs.map(d => `
@@ -329,38 +211,108 @@ AHORA DESCRIBE QUÉ DEBE HACER TU COMANDO
                     </div>
                 `).join('')}
                 
-                <div id="prompt-template" class="prompt-box">
-                    <button class="copy-btn" onclick="copyPrompt()">📋 Copiar Prompt</button>
-                    <h2>🤖 Generador de Comandos - Prompt Template</h2>
+                <div id="ai-generator" class="prompt-box">
+                    <h2>🤖 Generador de Comandos con IA</h2>
                     <p style="color: #bbb; margin-bottom: 20px;">
-                        Copia este prompt completo, pégalo en tu conversación con Claude y describe tu comando al final.
-                        <br><strong>Incluye toda la documentación de módulos disponibles.</strong>
+                        Describe qué debe hacer tu comando y la IA lo generará automáticamente usando la documentación del framework.
                     </p>
-                    <pre id="prompt-content">${promptTemplate.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #4db8ff; margin-bottom: 5px; font-weight: bold;">Nombre del comando</label>
+                        <input type="text" id="cmd-name" placeholder="mi-comando"
+                            style="width: 100%; padding: 10px; background: #2d2d2d; border: 1px solid #444; color: #eee; border-radius: 5px; font-size: 1em; box-sizing: border-box;" />
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #4db8ff; margin-bottom: 5px; font-weight: bold;">Describe qué debe hacer el comando</label>
+                        <textarea id="cmd-prompt" rows="6" placeholder="Ej: Crea un comando que liste todos los contenedores Docker activos y muestre su estado en una tabla formateada..."
+                            style="width: 100%; padding: 10px; background: #2d2d2d; border: 1px solid #444; color: #eee; border-radius: 5px; font-size: 1em; resize: vertical; box-sizing: border-box;"></textarea>
+                    </div>
+                    <button id="generate-btn" onclick="generateCommand()"
+                        style="background: #4db8ff; color: #000; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1em; transition: 0.2s; width: 100%;">
+                        Generar Comando
+                    </button>
+                    <div id="gen-status" style="margin-top: 15px; display: none; padding: 15px; border-radius: 5px;"></div>
                 </div>
             </main>
             <script>
-                function copyPrompt() {
-                    const promptText = document.getElementById('prompt-content').textContent;
-                    navigator.clipboard.writeText(promptText).then(() => {
-                        const btn = document.querySelector('.copy-btn');
-                        const originalText = btn.textContent;
-                        btn.textContent = '✅ Copiado!';
-                        btn.style.background = '#4ade80';
-                        setTimeout(() => {
-                            btn.textContent = originalText;
-                            btn.style.background = '#4db8ff';
-                        }, 2000);
-                    }, () => {
-                        alert('Error al copiar. Selecciona manualmente el texto.');
-                    });
+                async function generateCommand() {
+                    const name = document.getElementById('cmd-name').value.trim();
+                    const prompt = document.getElementById('cmd-prompt').value.trim();
+                    const btn = document.getElementById('generate-btn');
+                    const status = document.getElementById('gen-status');
+
+                    if (!name || !prompt) {
+                        status.style.display = 'block';
+                        status.style.background = '#4a2020';
+                        status.style.border = '1px solid #ff4444';
+                        status.textContent = 'Rellena ambos campos.';
+                        return;
+                    }
+
+                    btn.disabled = true;
+                    btn.textContent = 'Generando...';
+                    btn.style.background = '#888';
+                    status.style.display = 'block';
+                    status.style.background = '#1a1a2e';
+                    status.style.border = '1px solid #4db8ff';
+                    status.textContent = 'Enviando prompt a la IA... Esto puede tardar unos segundos.';
+
+                    try {
+                        const res = await fetch('/generate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, prompt })
+                        });
+                        const data = await res.json();
+
+                        if (data.success) {
+                            status.style.background = '#1a2e1a';
+                            status.style.border = '1px solid #4ade80';
+                            status.textContent = data.message;
+                        } else {
+                            status.style.background = '#4a2020';
+                            status.style.border = '1px solid #ff4444';
+                            status.textContent = data.message;
+                        }
+                    } catch (e) {
+                        status.style.background = '#4a2020';
+                        status.style.border = '1px solid #ff4444';
+                        status.textContent = 'Error de conexión con el servidor.';
+                    }
+
+                    btn.disabled = false;
+                    btn.textContent = 'Generar Comando';
+                    btn.style.background = '#4db8ff';
                 }
             </script>
         </body>
         </html>`;
 
         const PORT = 3000;
-        const server = http.createServer((req, res) => {
+        const server = http.createServer(async (req, res) => {
+            if (req.method === 'POST' && req.url === '/generate') {
+                let body = '';
+                req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+                req.on('end', async () => {
+                    try {
+                        const { name, prompt } = JSON.parse(body);
+                        if (!name || !prompt) {
+                            res.writeHead(400, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ success: false, message: 'Faltan campos obligatorios.' }));
+                            return;
+                        }
+
+                        await run('ai', [name, prompt]);
+
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: true, message: `Comando '${name}' generado correctamente en src/commands/${name}.tyr.ts` }));
+                    } catch (e: any) {
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: false, message: e.message || 'Error al generar el comando.' }));
+                    }
+                });
+                return;
+            }
+
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(html);
         });

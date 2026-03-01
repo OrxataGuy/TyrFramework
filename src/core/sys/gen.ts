@@ -20,6 +20,8 @@ export default ({ run, task, fail, logger }: TyrContext) => {
         logger.success("¡Comando %s finalizado!");
     };
 };
+
+export const Test = { args: [ ] };
 `;
 
 export default function gen({ logger, fs, frameworkRoot }: TyrContext) {

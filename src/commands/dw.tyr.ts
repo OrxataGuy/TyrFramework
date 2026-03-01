@@ -28,7 +28,7 @@ export default ({ task, fail, logger, shell, db, git, fs }: TyrContext) => {
 
         logger.info('Navegando al directorio de clientes...');
         shell.cd('~/dev/wolbenvironment/dev/websITS/clients');
-
+        console.log("Lanzo con url:", clientUrl)
         const broker = await task('Buscando broker en la base de datos', async () => {
             const result = await db.searchBrokerOnDB(clientUrl);
 
@@ -106,3 +106,11 @@ export default ({ task, fail, logger, shell, db, git, fs }: TyrContext) => {
 
     };
 };
+
+// export const Test = {
+//     args: ['https://www.feelporto.com/'],
+//     mockInputs: {
+//         'sobrescribir': 'm',  
+//         'rama': '' 
+//     }
+// }

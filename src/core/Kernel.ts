@@ -7,6 +7,7 @@ import { Container } from './Container';
 import gen from './sys/gen';
 import rem from './sys/rem';
 import doc from './sys/doc';
+import ai from './sys/ai';
 
 import { TyrError } from './TyrError';
 
@@ -102,6 +103,7 @@ export class Kernel {
             gen,
             rem,
             doc,
+            ai,
         };
 
         if (systemCommands[commandName]) {

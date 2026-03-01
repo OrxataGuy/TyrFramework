@@ -96,3 +96,7 @@ tyre() {
         logger.info('O simplemente abre una nueva terminal\n');
     };
 };
+
+// export const Test = {
+//     args: []
+// }

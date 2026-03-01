@@ -24,19 +24,18 @@ export class SystemManager {
      * await sys.killPort(8080);
      */
     public async killPort(port: number | string): Promise<boolean> {
-        try {
-            const pid = await this.shell.exec(`lsof -t -i:${port}`);
-            if (!pid) return false;
+    try {
+        const pid = await this.shell.exec(`lsof -t -i:${port}`).catch(() => null);
+        if (!pid?.trim()) return false;
 
-            this.logger.warn(`Port ${port} blocked by PID ${pid}. Killing...`);
-            await this.shell.exec(`kill -9 ${pid}`);
-            this.logger.success(`Port ${port} freed.`);
-            return true;
-        } catch (e) {
-            if (e instanceof TyrError) throw e;
-            throw new TyrError(`Could not free port: ${port}`, e, 'Check that lsof is available on your system.');
-        }
+        this.logger.warn(`Port ${port} blocked by PID ${pid.trim()}. Killing...`);
+        await this.shell.exec(`kill -9 ${pid.trim()}`);
+        this.logger.success(`Port ${port} freed.`);
+        return true;
+    } catch (e) {
+        throw new TyrError(`Could not free port: ${port}`, e, 'Check that lsof is available on your system.');
     }
+}
 
     /**
      * @method nukeNodeModules
@@ -58,5 +57,5 @@ export class SystemManager {
 }
 
 export const SystemManagerTests = {
-    // killPort: { port: 9999 },
+    killPort: { port: 8080 },
 };

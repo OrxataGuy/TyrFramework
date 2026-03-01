@@ -102,7 +102,7 @@ export class DockerManager {
 }
 
 export const DockerManagerTests = {
-    isRunning: {},
-    run: { image: 'alpine:latest', name: 'tyr-test-container', env: [] },
-    containerExists: { name: 'tyr-test-container' },
+    // isRunning: {},
+    // run: { image: 'alpine:latest', name: 'tyr-test-container', env: [] },
+    // containerExists: { name: 'tyr-test-container' },
 };

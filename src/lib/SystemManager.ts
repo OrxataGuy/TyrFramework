@@ -57,5 +57,5 @@ export class SystemManager {
 }
 
 export const SystemManagerTests = {
-    killPort: { port: 8080 },
+    killPort: { port: 3000 },
 };

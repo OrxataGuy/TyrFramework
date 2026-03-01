@@ -8,7 +8,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frameworkRoot = path.resolve(__dirname, '..');
-console.log(__dirname, __filename, frameworkRoot)
 
 interface TyrConfig {
     commands: Record<string, string>;

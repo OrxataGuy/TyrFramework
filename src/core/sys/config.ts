@@ -1,7 +1,6 @@
 import path from 'path';
-import yaml from 'js-yaml';
 import { homedir, platform } from 'os';
-import { existsSync, cpSync, rmSync } from 'fs';
+import { existsSync, cpSync, rmSync, mkdirSync, readdirSync } from 'fs';
 import { execSync } from 'child_process';
 import type { TyrContext } from '../Kernel';
 
@@ -13,7 +12,40 @@ function removeDirRecursive(dirPath: string): void {
     }
 }
 
-// ─── Shell RC detection ───────────────────────────────────────────────────────
+function clearDirExceptLogs(dirPath: string): void {
+    if (!existsSync(dirPath)) return;
+    for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
+        if (entry.name === 'logs') continue;
+        const fullPath = path.join(dirPath, entry.name);
+        if (entry.isDirectory()) {
+            removeDirRecursive(fullPath);
+        } else {
+            rmSync(fullPath, { force: true });
+        }
+    }
+}
+
+function copyDirContents(srcDir: string, destDir: string): void {
+    for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
+        cpSync(
+            path.join(srcDir, entry.name),
+            path.join(destDir, entry.name),
+            { recursive: true, force: true },
+        );
+    }
+}
+
+function backupUserRoot(userRoot: string, backupPath: string): void {
+    mkdirSync(backupPath, { recursive: true });
+    for (const entry of readdirSync(userRoot, { withFileTypes: true })) {
+        if (entry.name === 'logs') continue;
+        cpSync(
+            path.join(userRoot, entry.name),
+            path.join(backupPath, entry.name),
+            { recursive: true },
+        );
+    }
+}
 
 function detectShellRcFile(homeDir: string): string | null {
     const shell = process.env.SHELL || '';
@@ -26,8 +58,6 @@ function detectShellRcFile(homeDir: string): string | null {
     const fallbacks = [path.join(homeDir, '.zshrc'), path.join(homeDir, '.bashrc'), path.join(homeDir, '.bash_profile')];
     return fallbacks.find(p => existsSync(p)) ?? path.join(homeDir, '.bashrc');
 }
-
-// ─── File templates ───────────────────────────────────────────────────────────
 
 const ENV_TEMPLATE = `# ~/.tyr/.env
 # Variables de entorno para Tyr. Este archivo nunca debe subirse a git.
@@ -77,8 +107,6 @@ const PS_PLUGINS_TEMPLATE = `# ~/.tyr/plugins.ps1
 #   Import-Module PSReadLine
 `;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function makeTimestamp(): string {
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -113,8 +141,6 @@ async function configureWindowsShell(tyrFs: any, logger: any, aliasesPath: strin
     logger.info('Reinicia PowerShell para aplicar los cambios.');
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-
 export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrContext) {
     return async (args: string[]) => {
         const homeDir = homedir();
@@ -132,37 +158,40 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
             return;
         }
 
-        // ── 1. Backup existing ~/.tyr ──────────────────────────────────────────
-        let backupPath: string | null = null;
+              let backupPath: string | null = null;
         if (existsSync(userRoot)) {
             backupPath = `${userRoot}.bak.${makeTimestamp()}`;
-            cpSync(userRoot, backupPath, { recursive: true });
-            removeDirRecursive(userRoot);
+            backupUserRoot(userRoot, backupPath);
             logger.warn(`Configuración anterior respaldada en: ${backupPath}`);
         }
 
-        // ── 2. Git clone (if --repo) ───────────────────────────────────────────
-        let repoHasContent = false;
+               let repoHasContent = false;
         if (repoUrl) {
+            const tempDir = `${userRoot}.setup-temp`;
+            if (existsSync(tempDir)) {
+                try { removeDirRecursive(tempDir); } catch {}
+            }
+
             logger.info(`\nClonando repositorio: ${repoUrl}`);
             try {
-                await shell.exec(`git clone "${repoUrl}" "${userRoot}"`);
+                await shell.exec(`git clone "${repoUrl}" "${tempDir}"`);
             } catch (e) {
-                // Restore backup if clone failed
-                if (backupPath && existsSync(backupPath)) {
-                    cpSync(backupPath, userRoot, { recursive: true });
-                    removeDirRecursive(backupPath);
-                    logger.warn('Error al clonar. Configuración anterior restaurada.');
+                if (existsSync(tempDir)) {
+                    try { removeDirRecursive(tempDir); } catch {}
                 }
                 throw e;
             }
-            repoHasContent = tyrFs.exists(path.join(userRoot, 'map.yml'));
+
+            repoHasContent = existsSync(path.join(tempDir, 'map.yml'));
             logger.success(repoHasContent
                 ? 'Repositorio clonado con configuración existente.'
                 : 'Repositorio vacío — iniciando configuración por defecto...');
+
+            clearDirExceptLogs(userRoot);
+            copyDirContents(tempDir, userRoot);
+            try { removeDirRecursive(tempDir); } catch {}
         }
 
-        // ── 3. Initialize if needed (no repo, or repo was empty) ──────────────
         if (!repoHasContent) {
             logger.info('\nInicializando ~/.tyr...\n');
 
@@ -181,19 +210,16 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
                 logger.success(`Archivo creado: ${pluginsPath}`);
             }
 
-            // Write map.yml
             const mapPath = path.join(userRoot, 'map.yml');
             await tyrFs.write(mapPath, 'commands: {}\n');
             logger.success(`Archivo creado: ${mapPath}`);
 
-            // Write .env template
             const envPath = path.join(userRoot, '.env');
             if (!tyrFs.exists(envPath)) {
                 await tyrFs.write(envPath, ENV_TEMPLATE);
                 logger.success(`Archivo creado: ${envPath}`);
             }
 
-            // If linked to a repo, commit and push
             if (repoUrl) {
                 logger.info('\nSubiendo configuración inicial al repositorio...');
                 shell.cd(userRoot);
@@ -208,7 +234,6 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
             }
         }
 
-        // ── 4. Configure shell (always) ────────────────────────────────────────
         const aliasesPath = path.join(userRoot, `aliases${ext}`);
         const pluginsPath = path.join(userRoot, `plugins${ext}`);
 

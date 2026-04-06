@@ -2,7 +2,16 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { homedir, platform } from 'os';
 import { existsSync, cpSync, rmSync } from 'fs';
+import { execSync } from 'child_process';
 import type { TyrContext } from '../Kernel';
+
+function removeDirRecursive(dirPath: string): void {
+    if (platform() === 'win32') {
+        execSync(`rd /s /q "${dirPath}"`, { stdio: 'pipe' });
+    } else {
+        rmSync(dirPath, { recursive: true, force: true });
+    }
+}
 
 // ─── Shell RC detection ───────────────────────────────────────────────────────
 
@@ -128,7 +137,7 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
         if (existsSync(userRoot)) {
             backupPath = `${userRoot}.bak.${makeTimestamp()}`;
             cpSync(userRoot, backupPath, { recursive: true });
-            rmSync(userRoot, { recursive: true, force: true });
+            removeDirRecursive(userRoot);
             logger.warn(`Configuración anterior respaldada en: ${backupPath}`);
         }
 
@@ -142,7 +151,7 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
                 // Restore backup if clone failed
                 if (backupPath && existsSync(backupPath)) {
                     cpSync(backupPath, userRoot, { recursive: true });
-                    rmSync(backupPath, { recursive: true, force: true });
+                    removeDirRecursive(backupPath);
                     logger.warn('Error al clonar. Configuración anterior restaurada.');
                 }
                 throw e;

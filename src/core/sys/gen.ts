@@ -7,21 +7,18 @@ interface TyrConfig {
     aliases?: Record<string, string>;
 }
 
-const template = `
-import { TyrContext } from '../core/Kernel';
-
-export default ({ run, task, fail, logger }: TyrContext) => {
+const template = `export default ({ run, task, fail, logger, shell, fs }: any) => {
     return async (args: string[]) => {
         logger.info("Ejecutando comando: %s");
 
         // Tu lógica aquí...
-        // Ejecuta "tyr doc" para ver la documentación
+        // Ejecuta "tyr doc" para ver la documentación de managers disponibles
 
         logger.success("¡Comando %s finalizado!");
     };
 };
 
-export const Test = { args: [ ] };
+export const Test = { args: [] };
 `;
 
 export default function gen({ logger, fs, userRoot }: TyrContext) {

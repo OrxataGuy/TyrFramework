@@ -54,36 +54,24 @@ export class Kernel {
         const isDebug = args.includes('--debug');
         await this.container.init(isDebug);
 
-        // Load framework commands (read-only, ships with the package)
-        const frameworkConfigPath = path.resolve(this.frameworkRoot, 'config/map.yml');
-        let frameworkConfig: TyrConfig = { commands: {} };
-        try {
-            frameworkConfig = yaml.load(fs.readFileSync(frameworkConfigPath, 'utf8')) as TyrConfig;
-        } catch {
-            console.error(`Warning: framework config not found at ${frameworkConfigPath}`);
-        }
+        // All commands live in ~/.tyr/map.yml — the framework ships no runtime commands
+        this.config = { commands: {}, aliases: {} };
 
-        // Load user commands from ~/.tyr/map.yml (optional)
         const userConfigPath = path.join(this.userRoot, 'map.yml');
-        let userConfig: TyrConfig = { commands: {} };
         if (fs.existsSync(userConfigPath)) {
             try {
                 const raw = yaml.load(fs.readFileSync(userConfigPath, 'utf8')) as TyrConfig;
-                // Resolve user command paths to absolute so they don't get confused with framework paths
-                userConfig.commands = {};
-                for (const [name, relPath] of Object.entries(raw.commands ?? {})) {
-                    userConfig.commands[name] = path.resolve(this.userRoot, relPath);
+                for (const [name, cmdPath] of Object.entries(raw.commands ?? {})) {
+                    // Absolute paths used as-is; relative paths resolved from userRoot
+                    this.config.commands[name] = path.isAbsolute(cmdPath)
+                        ? cmdPath
+                        : path.resolve(this.userRoot, cmdPath);
                 }
+                this.config.aliases = raw.aliases ?? {};
             } catch {
                 console.error(`Warning: could not load user config at ${userConfigPath}`);
             }
         }
-
-        // Merge: user commands override framework commands
-        this.config = {
-            commands: { ...frameworkConfig.commands, ...userConfig.commands },
-            aliases: { ...frameworkConfig.aliases, ...userConfig.aliases },
-        };
     }
 
     public async handle(args: string[]): Promise<void> {

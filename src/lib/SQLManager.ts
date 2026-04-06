@@ -1,13 +1,10 @@
-import 'dotenv/config';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { homedir } from 'os';
 import sql, { config as SQLConfig } from 'mssql';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Load credentials from ~/.tyr/.env — silently, optional
+(dotenv as any).config({ path: path.join(homedir(), '.tyr', '.env'), quiet: true });
 
 /**
  * @class SQLManager

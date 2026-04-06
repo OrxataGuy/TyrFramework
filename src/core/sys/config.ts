@@ -1,8 +1,7 @@
 import path from 'path';
 import yaml from 'js-yaml';
 import { homedir, platform } from 'os';
-import { existsSync } from 'fs';
-import { rename } from 'fs/promises';
+import { existsSync, cpSync, rmSync } from 'fs';
 import type { TyrContext } from '../Kernel';
 
 // ─── Shell RC detection ───────────────────────────────────────────────────────
@@ -128,7 +127,8 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
         let backupPath: string | null = null;
         if (existsSync(userRoot)) {
             backupPath = `${userRoot}.bak.${makeTimestamp()}`;
-            await rename(userRoot, backupPath);
+            cpSync(userRoot, backupPath, { recursive: true });
+            rmSync(userRoot, { recursive: true, force: true });
             logger.warn(`Configuración anterior respaldada en: ${backupPath}`);
         }
 
@@ -141,7 +141,8 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
             } catch (e) {
                 // Restore backup if clone failed
                 if (backupPath && existsSync(backupPath)) {
-                    await rename(backupPath, userRoot);
+                    cpSync(backupPath, userRoot, { recursive: true });
+                    rmSync(backupPath, { recursive: true, force: true });
                     logger.warn('Error al clonar. Configuración anterior restaurada.');
                 }
                 throw e;

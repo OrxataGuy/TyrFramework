@@ -7,7 +7,9 @@ interface TyrConfig {
     aliases?: Record<string, string>;
 }
 
-const template = `export default ({ run, task, fail, logger, shell, fs }: any) => {
+const template = `import type { TyrContext } from '@orxataguy/tyr';
+
+export default ({ run, task, fail, logger, shell, fs }: TyrContext) => {
     return async (args: string[]) => {
         logger.info("Ejecutando comando: %s");
 

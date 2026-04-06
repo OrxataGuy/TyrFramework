@@ -28,9 +28,16 @@ export class PackageManager {
     public async detect(): Promise<string> {
         if (this.manager) return this.manager;
 
-        for (const [bin, name] of [['apt-get', 'apt'], ['brew', 'brew'], ['dnf', 'dnf']] as const) {
+        const isWindows = process.platform === 'win32';
+        const checkCmd = isWindows ? 'where' : 'which';
+
+        const candidates: [string, string][] = isWindows
+            ? [['winget', 'winget'], ['choco', 'choco'], ['scoop', 'scoop']]
+            : [['apt-get', 'apt'], ['brew', 'brew'], ['dnf', 'dnf']];
+
+        for (const [bin, name] of candidates) {
             try {
-                await this.shell.exec(`which ${bin}`);
+                await this.shell.exec(`${checkCmd} ${bin}`);
                 this.manager = name;
                 return name;
             } catch (e) {}
@@ -39,7 +46,9 @@ export class PackageManager {
         throw new TyrError(
             'No supported package manager detected.',
             null,
-            'Make sure apt, brew or dnf is installed on your system.'
+            isWindows
+                ? 'Install winget (Windows Package Manager), Chocolatey, or Scoop.'
+                : 'Make sure apt, brew or dnf is installed on your system.'
         );
     }
 
@@ -58,6 +67,9 @@ export class PackageManager {
             apt: `sudo apt-get install -y ${packageName}`,
             brew: `brew install ${packageName}`,
             dnf: `sudo dnf install -y ${packageName}`,
+            winget: `winget install ${packageName}`,
+            choco: `choco install -y ${packageName}`,
+            scoop: `scoop install ${packageName}`,
         };
 
         try {

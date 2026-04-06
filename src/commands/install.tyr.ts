@@ -1,17 +1,48 @@
 import { TyrContext } from '../core/Kernel';
+import { homedir, platform } from 'os';
+import { existsSync } from 'fs';
+import path from 'path';
+
+function detectShellRcFile(homeDir: string): string | null {
+    const shell = process.env.SHELL || '';
+
+    if (shell.includes('zsh')) return path.join(homeDir, '.zshrc');
+    if (shell.includes('fish')) return path.join(homeDir, '.config', 'fish', 'config.fish');
+    if (shell.includes('bash')) {
+        const candidates = [
+            path.join(homeDir, '.bash_profile'),
+            path.join(homeDir, '.bashrc'),
+        ];
+        return candidates.find(p => existsSync(p)) ?? path.join(homeDir, '.bashrc');
+    }
+
+    // Fallback: try common files in order
+    const fallbacks = [
+        path.join(homeDir, '.zshrc'),
+        path.join(homeDir, '.bashrc'),
+        path.join(homeDir, '.bash_profile'),
+    ];
+    return fallbacks.find(p => existsSync(p)) ?? path.join(homeDir, '.bashrc');
+}
+
+async function getPowerShellProfile(shell: any): Promise<string | null> {
+    try {
+        const profile = await shell.exec('powershell -NoProfile -Command "$PROFILE"').catch(() => null);
+        return profile?.trim() || null;
+    } catch {
+        return null;
+    }
+}
 
 export default ({ task, fail, logger, fs, shell }: TyrContext) => {
     return async (args: string[]) => {
-        const homeDir = process.env.HOME || process.env.USERPROFILE;
-        if (!homeDir) {
-            fail('No se pudo determinar el directorio HOME del usuario');
-        }
+        const homeDir = homedir();
+        const isWindows = platform() === 'win32';
 
-        const tfgPath = `${homeDir}/Projects/TyrFramework`;
-        const addonsPath = `${tfgPath}/local`;
-        const aliasesTemplatePath = `${homeDir}/avantio/framework/core/include/bin/aliases.template.sh`;
-        const pluginsTemplatePath = `${homeDir}/avantio/framework/core/include/bin/plugins.template.sh`;
-        const zshrcPath = `${homeDir}/.zshrc`;
+        const tfgPath = path.join(homeDir, 'Projects', 'TyrFramework');
+        const addonsPath = path.join(tfgPath, 'local');
+        const aliasesTemplatePath = path.join(homeDir, 'avantio', 'framework', 'core', 'include', 'bin', 'aliases.template.sh');
+        const pluginsTemplatePath = path.join(homeDir, 'avantio', 'framework', 'core', 'include', 'bin', 'plugins.template.sh');
 
         await task('Verificando directorio TFG', async () => {
             if (!fs.exists(tfgPath)) {
@@ -51,8 +82,8 @@ export default ({ task, fail, logger, fs, shell }: TyrContext) => {
             if (!aliasesContent) {
                 fail('No se pudo leer el contenido de aliases.template.sh');
             }
-            await fs.write(`${addonsPath}/aliases.sh`, aliasesContent);
-            logger.success(`Archivo creado: ${addonsPath}/aliases.sh`);
+            await fs.write(path.join(addonsPath, 'aliases.sh'), aliasesContent!);
+            logger.success(`Archivo creado: ${path.join(addonsPath, 'aliases.sh')}`);
         });
 
         await task('Copiando plugins.template.sh', async () => {
@@ -60,40 +91,42 @@ export default ({ task, fail, logger, fs, shell }: TyrContext) => {
             if (!pluginsContent) {
                 fail('No se pudo leer el contenido de plugins.template.sh');
             }
-            await fs.write(`${addonsPath}/plugins.sh`, pluginsContent);
-            logger.success(`Archivo creado: ${addonsPath}/plugins.sh`);
+            await fs.write(path.join(addonsPath, 'plugins.sh'), pluginsContent!);
+            logger.success(`Archivo creado: ${path.join(addonsPath, 'plugins.sh')}`);
         });
 
-        await task('Configurando alias tyre en .zshrc', async () => {
-            if (!fs.exists(zshrcPath)) {
-                logger.warn(`Archivo .zshrc no encontrado, se creará uno nuevo`);
-                await fs.write(zshrcPath, '# Configuración de Zsh\n\n');
-            }
+        if (isWindows) {
+            await task('Configurando perfil de PowerShell', async () => {
+                const psProfile = await getPowerShellProfile(shell);
+                if (psProfile) {
+                    const sourceLine = `. "${path.join(addonsPath, 'aliases.sh')}"`;
+                    await fs.ensureLine(psProfile, sourceLine);
+                    logger.success(`Aliases añadidos al perfil de PowerShell: ${psProfile}`);
+                    logger.info('Reinicia PowerShell para aplicar los cambios');
+                } else {
+                    logger.warn('No se pudo detectar el perfil de PowerShell.');
+                    logger.info(`Añade manualmente a tu perfil: . "${path.join(addonsPath, 'aliases.sh')}"`);
+                }
+            });
+        } else {
+            await task('Configurando shell', async () => {
+                const rcFile = detectShellRcFile(homeDir);
+                if (!rcFile) {
+                    logger.warn('No se pudo detectar el archivo de configuración de shell. Configura manualmente.');
+                    return;
+                }
 
-            const tyreAliasDefinition = `
-# Alias para Tyr Framework (TFG)
-tyre() {
-    cd ~/Projects/TyrFramework && nvm use 23 > /dev/null && npm link > /dev/null && tyr "$@"
-}
-`;
+                const sourceLine = `source "${path.join(addonsPath, 'aliases.sh')}"`;
+                await fs.ensureLine(rcFile, sourceLine);
+                logger.success(`Aliases añadidos a: ${rcFile}`);
+                logger.info(`Ejecuta: source ${rcFile}  (o abre una nueva terminal)`);
+            });
+        }
 
-            const zshrcContent = await fs.read(zshrcPath);
-            if (zshrcContent && zshrcContent.includes('tyre()')) {
-                logger.warn('⚠ El alias tyre ya existe en .zshrc, se omitirá');
-            } else {
-                await fs.write(zshrcPath, (zshrcContent || '') + tyreAliasDefinition);
-                logger.success('Alias tyre añadido a .zshrc');
-            }
-        });
-
-        logger.success('\n🎉 Estructura de addons configurada exitosamente');
+        logger.success('\nEstructura de addons configurada exitosamente');
         logger.info(`\nArchivos creados en: ${addonsPath}`);
         logger.info('  - aliases.sh');
         logger.info('  - plugins.sh');
-        logger.info(`\nAlias configurado en: ${zshrcPath}`);
-        logger.info('  - tyre → ejecuta Tyr desde el directorio TFG');
-        logger.warn('\n⚠ Recuerda ejecutar: source ~/.zshrc  para activar el alias');
-        logger.info('O simplemente abre una nueva terminal\n');
     };
 };
 

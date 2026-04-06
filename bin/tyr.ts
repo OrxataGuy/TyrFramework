@@ -1,6 +1,4 @@
-#!/usr/bin/env -S npx tsx
-
-import { Kernel } from '../src/core/Kernel.ts'; // Mantén la extensión .js aquí por compatibilidad ESM
+import { Kernel } from '../src/core/Kernel.ts';
 
 (async () => {
     try {

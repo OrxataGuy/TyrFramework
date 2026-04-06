@@ -24,18 +24,35 @@ export class SystemManager {
      * await sys.killPort(8080);
      */
     public async killPort(port: number | string): Promise<boolean> {
-    try {
-        const pid = await this.shell.exec(`lsof -t -i:${port}`).catch(() => null);
-        if (!pid?.trim()) return false;
+        try {
+            let pid: string | null = null;
 
-        this.logger.warn(`Port ${port} blocked by PID ${pid.trim()}. Killing...`);
-        await this.shell.exec(`kill -9 ${pid.trim()}`);
-        this.logger.success(`Port ${port} freed.`);
-        return true;
-    } catch (e) {
-        throw new TyrError(`Could not free port: ${port}`, e, 'Check that lsof is available on your system.');
+            if (process.platform === 'win32') {
+                const result = await this.shell.exec(`netstat -ano | findstr :${port}`).catch(() => null);
+                if (!result?.trim()) return false;
+                const lines = result.trim().split('\n').filter(l => l.includes(`LISTENING`));
+                if (!lines.length) return false;
+                pid = lines[0].trim().split(/\s+/).pop() ?? null;
+            } else {
+                pid = await this.shell.exec(`lsof -t -i:${port}`).catch(() => null);
+            }
+
+            if (!pid?.trim()) return false;
+
+            this.logger.warn(`Port ${port} blocked by PID ${pid.trim()}. Killing...`);
+
+            if (process.platform === 'win32') {
+                await this.shell.exec(`taskkill /F /PID ${pid.trim()}`);
+            } else {
+                await this.shell.exec(`kill -9 ${pid.trim()}`);
+            }
+
+            this.logger.success(`Port ${port} freed.`);
+            return true;
+        } catch (e) {
+            throw new TyrError(`Could not free port: ${port}`, e, 'Check that you have the necessary permissions.');
+        }
     }
-}
 
     /**
      * @method nukeNodeModules
@@ -47,7 +64,12 @@ export class SystemManager {
     public async nukeNodeModules(): Promise<void> {
         this.logger.info('Cleaning up dependencies...');
         try {
-            await this.shell.exec('rm -rf node_modules package-lock.json');
+            if (process.platform === 'win32') {
+                await this.shell.exec('if exist node_modules rmdir /s /q node_modules');
+                await this.shell.exec('if exist package-lock.json del /f /q package-lock.json');
+            } else {
+                await this.shell.exec('rm -rf node_modules package-lock.json');
+            }
             this.logger.success('node_modules and package-lock.json removed.');
         } catch (e) {
             if (e instanceof TyrError) throw e;

@@ -30,6 +30,9 @@
     "DevOps",
     "cross-platform"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "author": "Manel Andreu Pérez",
   "license": "MIT",
   "description": "Tyr is a TypeScript-based environment that resolves this fragmentation through the creation, execution, and automation of CLI tools. Its architecture is built on dependency injection: the \"Kernel\" provides an execution context where \"Managers\" expose their functionality via an auto-generated API. Thanks to a code introspection system, the environment analyzes types and documentation in real-time, offering the programmer a ready-to-use catalog of tools. This completely decouples command logic from underlying libraries, allowing developers to invoke complex functions without needing to manage external packages or configurations.",

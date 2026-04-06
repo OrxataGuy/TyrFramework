@@ -2,25 +2,24 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { homedir, platform } from 'os';
 import { existsSync } from 'fs';
+import { rename } from 'fs/promises';
 import type { TyrContext } from '../Kernel';
+
+// ─── Shell RC detection ───────────────────────────────────────────────────────
 
 function detectShellRcFile(homeDir: string): string | null {
     const shell = process.env.SHELL || '';
-
     if (shell.includes('zsh'))  return path.join(homeDir, '.zshrc');
     if (shell.includes('fish')) return path.join(homeDir, '.config', 'fish', 'config.fish');
     if (shell.includes('bash')) {
         const candidates = [path.join(homeDir, '.bash_profile'), path.join(homeDir, '.bashrc')];
         return candidates.find(p => existsSync(p)) ?? path.join(homeDir, '.bashrc');
     }
-
-    const fallbacks = [
-        path.join(homeDir, '.zshrc'),
-        path.join(homeDir, '.bashrc'),
-        path.join(homeDir, '.bash_profile'),
-    ];
+    const fallbacks = [path.join(homeDir, '.zshrc'), path.join(homeDir, '.bashrc'), path.join(homeDir, '.bash_profile')];
     return fallbacks.find(p => existsSync(p)) ?? path.join(homeDir, '.bashrc');
 }
+
+// ─── File templates ───────────────────────────────────────────────────────────
 
 const SH_ALIASES_TEMPLATE = `# ~/.tyr/aliases
 # Añade aquí tus aliases personalizados.
@@ -55,80 +54,15 @@ const PS_PLUGINS_TEMPLATE = `# ~/.tyr/plugins.ps1
 #   Import-Module PSReadLine
 `;
 
-export default function config({ logger, fs: tyrFs, frameworkRoot }: TyrContext) {
-    return async (_args: string[]) => {
-        const homeDir = homedir();
-        const userRoot = path.join(homeDir, '.tyr');
-        const isWindows = platform() === 'win32';
-        const ext = isWindows ? '.ps1' : '';
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-        logger.info('Iniciando configuración de Tyr...\n');
-
-        // 1. ~/.tyr/commands/
-        await tyrFs.createDir(path.join(userRoot, 'commands'));
-        logger.success(`Directorio creado: ${path.join(userRoot, 'commands')}`);
-
-        // 2. ~/.tyr/aliases(.ps1)
-        const aliasesPath = path.join(userRoot, `aliases${ext}`);
-        if (!tyrFs.exists(aliasesPath)) {
-            await tyrFs.write(aliasesPath, isWindows ? PS_ALIASES_TEMPLATE : SH_ALIASES_TEMPLATE);
-            logger.success(`Archivo creado: ${aliasesPath}`);
-        } else {
-            logger.info(`Ya existe: ${aliasesPath}`);
-        }
-
-        // 3. ~/.tyr/plugins(.ps1)
-        const pluginsPath = path.join(userRoot, `plugins${ext}`);
-        if (!tyrFs.exists(pluginsPath)) {
-            await tyrFs.write(pluginsPath, isWindows ? PS_PLUGINS_TEMPLATE : SH_PLUGINS_TEMPLATE);
-            logger.success(`Archivo creado: ${pluginsPath}`);
-        } else {
-            logger.info(`Ya existe: ${pluginsPath}`);
-        }
-
-        // 4. ~/.tyr/map.yml — create or update, registering framework commands with absolute paths
-        const mapPath = path.join(userRoot, 'map.yml');
-        const currentRaw = await tyrFs.read(mapPath);
-        const userConfig: { commands: Record<string, string> } =
-            (yaml.load(currentRaw ?? '') as any) ?? { commands: {} };
-        if (!userConfig.commands) userConfig.commands = {};
-
-        const frameworkMapPath = path.join(frameworkRoot, 'config', 'map.yml');
-        if (existsSync(frameworkMapPath)) {
-            const frameworkRaw = await tyrFs.read(frameworkMapPath);
-            const frameworkConfig = (yaml.load(frameworkRaw ?? '') as any) ?? {};
-            for (const [name, relPath] of Object.entries(frameworkConfig.commands ?? {})) {
-                const absPath = path.resolve(frameworkRoot, relPath as string);
-                if (existsSync(absPath) && !userConfig.commands[name]) {
-                    userConfig.commands[name] = absPath;
-                    logger.info(`  Comando registrado: ${name}`);
-                }
-            }
-        }
-
-        await tyrFs.write(mapPath, yaml.dump(userConfig, { indent: 2, lineWidth: -1 }));
-        logger.success(`Configuración guardada: ${mapPath}`);
-
-        // 5. Configure shell to source aliases and plugins
-        logger.info('\nConfigurando shell...');
-        if (isWindows) {
-            await configureWindowsShell(tyrFs, logger, aliasesPath, pluginsPath);
-        } else {
-            await configureUnixShell(tyrFs, logger, homeDir, aliasesPath, pluginsPath);
-        }
-
-        logger.success('\nTyr configurado correctamente.');
-        logger.info(`\nDirectorio de configuración: ${userRoot}`);
-        logger.info('\nPróximos pasos:');
-        logger.info('  tyr gen <nombre> <archivo>   Crear un nuevo comando');
-        logger.info('  tyr doc                      Ver documentación de la API');
-    };
+function makeTimestamp(): string {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
 }
 
-async function configureUnixShell(
-    tyrFs: any, logger: any,
-    homeDir: string, aliasesPath: string, pluginsPath: string
-): Promise<void> {
+async function configureUnixShell(tyrFs: any, logger: any, homeDir: string, aliasesPath: string, pluginsPath: string): Promise<void> {
     const rcFile = detectShellRcFile(homeDir);
     if (!rcFile) {
         logger.warn('No se pudo detectar el archivo de configuración del shell.');
@@ -141,14 +75,10 @@ async function configureUnixShell(
     logger.info(`Ejecuta: source ${rcFile}  (o abre una nueva terminal)`);
 }
 
-async function configureWindowsShell(
-    tyrFs: any, logger: any,
-    aliasesPath: string, pluginsPath: string
-): Promise<void> {
+async function configureWindowsShell(tyrFs: any, logger: any, aliasesPath: string, pluginsPath: string): Promise<void> {
     const psProfile = process.env.USERPROFILE
         ? path.join(process.env.USERPROFILE, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
         : null;
-
     if (!psProfile) {
         logger.warn('No se pudo detectar el perfil de PowerShell.');
         logger.info(`Añade manualmente:\n  . "${aliasesPath}"\n  . "${pluginsPath}"`);
@@ -158,4 +88,112 @@ async function configureWindowsShell(
     await tyrFs.ensureLine(psProfile, `. "${pluginsPath}"`);
     logger.success(`Perfil de PowerShell configurado: ${psProfile}`);
     logger.info('Reinicia PowerShell para aplicar los cambios.');
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrContext) {
+    return async (args: string[]) => {
+        const homeDir = homedir();
+        const userRoot = path.join(homeDir, '.tyr');
+        const isWindows = platform() === 'win32';
+        const ext = isWindows ? '.ps1' : '';
+
+        // Parse --repo <url>
+        const repoIndex = args.indexOf('--repo');
+        const repoUrl = repoIndex !== -1 ? (args[repoIndex + 1] ?? null) : null;
+
+        if (repoIndex !== -1 && (!repoUrl || repoUrl.startsWith('--'))) {
+            logger.error('Falta la URL del repositorio.');
+            logger.info('Uso: tyr --config --repo <url>');
+            return;
+        }
+
+        // ── 1. Backup existing ~/.tyr ──────────────────────────────────────────
+        let backupPath: string | null = null;
+        if (existsSync(userRoot)) {
+            backupPath = `${userRoot}.bak.${makeTimestamp()}`;
+            await rename(userRoot, backupPath);
+            logger.warn(`Configuración anterior respaldada en: ${backupPath}`);
+        }
+
+        // ── 2. Git clone (if --repo) ───────────────────────────────────────────
+        let repoHasContent = false;
+        if (repoUrl) {
+            logger.info(`\nClonando repositorio: ${repoUrl}`);
+            try {
+                await shell.exec(`git clone "${repoUrl}" "${userRoot}"`);
+            } catch (e) {
+                // Restore backup if clone failed
+                if (backupPath && existsSync(backupPath)) {
+                    await rename(backupPath, userRoot);
+                    logger.warn('Error al clonar. Configuración anterior restaurada.');
+                }
+                throw e;
+            }
+            repoHasContent = tyrFs.exists(path.join(userRoot, 'map.yml'));
+            logger.success(repoHasContent
+                ? 'Repositorio clonado con configuración existente.'
+                : 'Repositorio vacío — iniciando configuración por defecto...');
+        }
+
+        // ── 3. Initialize if needed (no repo, or repo was empty) ──────────────
+        if (!repoHasContent) {
+            logger.info('\nInicializando ~/.tyr...\n');
+
+            await tyrFs.createDir(path.join(userRoot, 'commands'));
+            logger.success(`Directorio creado: ${path.join(userRoot, 'commands')}`);
+
+            const aliasesPath = path.join(userRoot, `aliases${ext}`);
+            if (!tyrFs.exists(aliasesPath)) {
+                await tyrFs.write(aliasesPath, isWindows ? PS_ALIASES_TEMPLATE : SH_ALIASES_TEMPLATE);
+                logger.success(`Archivo creado: ${aliasesPath}`);
+            }
+
+            const pluginsPath = path.join(userRoot, `plugins${ext}`);
+            if (!tyrFs.exists(pluginsPath)) {
+                await tyrFs.write(pluginsPath, isWindows ? PS_PLUGINS_TEMPLATE : SH_PLUGINS_TEMPLATE);
+                logger.success(`Archivo creado: ${pluginsPath}`);
+            }
+
+            // Write map.yml
+            const mapPath = path.join(userRoot, 'map.yml');
+            await tyrFs.write(mapPath, 'commands: {}\n');
+            logger.success(`Archivo creado: ${mapPath}`);
+
+            // If linked to a repo, commit and push
+            if (repoUrl) {
+                logger.info('\nSubiendo configuración inicial al repositorio...');
+                shell.cd(userRoot);
+                try {
+                    await shell.exec('git add .');
+                    await shell.exec('git commit -m "Initial tyr configuration"');
+                    await shell.exec('git push -u origin HEAD');
+                    logger.success('Configuración subida al repositorio.');
+                } catch (e) {
+                    logger.warn('No se pudo hacer push automático. Hazlo manualmente desde ~/.tyr');
+                }
+            }
+        }
+
+        // ── 4. Configure shell (always) ────────────────────────────────────────
+        const aliasesPath = path.join(userRoot, `aliases${ext}`);
+        const pluginsPath = path.join(userRoot, `plugins${ext}`);
+
+        if (tyrFs.exists(aliasesPath) || tyrFs.exists(pluginsPath)) {
+            logger.info('\nConfigurando shell...');
+            if (isWindows) {
+                await configureWindowsShell(tyrFs, logger, aliasesPath, pluginsPath);
+            } else {
+                await configureUnixShell(tyrFs, logger, homeDir, aliasesPath, pluginsPath);
+            }
+        }
+
+        logger.success('\nTyr configurado correctamente.');
+        logger.info(`Directorio de configuración: ${userRoot}`);
+        if (repoUrl) logger.info(`Repositorio vinculado: ${repoUrl}`);
+        logger.info('\nPróximos pasos:');
+        logger.info('  tyr gen <nombre> <archivo>   Crear un nuevo comando');
+        logger.info('  tyr doc                      Ver documentación de la API');
+    };
 }

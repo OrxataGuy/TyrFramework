@@ -134,7 +134,7 @@ export class Kernel {
 
         // --config (needs context for fs/logger)
         if (commandName === '--config') {
-            await config(context)([]);
+            await config(context)(args.slice(1));
             return;
         }
 

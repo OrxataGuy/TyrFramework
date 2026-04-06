@@ -58,6 +58,11 @@ describe('Custom Commands', () => {
 
     const config = yaml.load(fs.readFileSync(configPath, 'utf8')) as TyrConfig;
 
+    if (!config.commands || Object.keys(config.commands).length === 0) {
+        it.skip('No custom commands defined', () => {});
+        return;
+    }
+
     Object.entries(config.commands).forEach(([commandName, scriptPath]) => {
         const absolutePath = path.resolve(frameworkRoot, scriptPath);
 

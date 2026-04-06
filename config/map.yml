@@ -1,7 +1,4 @@
 settings:
   appName: Tyr CLI
   version: 0.1.0
-commands:
-  install: ./src/commands/install.tyr.ts
-  dw: ./src/commands/dw.tyr.ts
-  di: ./src/commands/di.tyr.ts
+commands: {}

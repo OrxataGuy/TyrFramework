@@ -111,7 +111,7 @@ REGLAS:export default;async(args:string[]);task() p/errores;fail() p/validar;Tes
 Responde SOLO código TS sin explicaciones ni backticks.`;
 }
 
-export default function ai({ logger, fs: tyrFs, frameworkRoot, run, fail }: TyrContext) {
+export default function ai({ logger, fs: tyrFs, userRoot, run, fail }: TyrContext) {
     return async (args: string[]) => {
         const commandName = args[0];
         const prompt = args.slice(1).join(' ');
@@ -153,8 +153,8 @@ export default function ai({ logger, fs: tyrFs, frameworkRoot, run, fail }: TyrC
             );
         }
 
-        const filePath = path.resolve(frameworkRoot, 'src/commands', `${commandName}.tyr.ts`);
+        const filePath = path.join(userRoot, 'commands', `${commandName}.tyr.ts`);
         await tyrFs.write(filePath, code);
-        logger.success(`'${commandName}' -> src/commands/${commandName}.tyr.ts`);
+        logger.success(`'${commandName}' -> ~/.tyr/commands/${commandName}.tyr.ts`);
     };
 }

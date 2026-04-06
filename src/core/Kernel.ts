@@ -86,7 +86,8 @@ export class Kernel {
             console.log('Usage: tyr <command> [args...]');
             console.log('       tyr --config     Configure Tyr for the first time');
             console.log('       tyr --version    Show version');
-            console.log('       tyr --update     Update Tyr to the latest version');
+            console.log('       tyr --update     Pull latest changes from the linked ~/.tyr repo');
+            console.log('       tyr --upgrade    Upgrade Tyr to the latest npm version');
             return;
         }
 
@@ -98,14 +99,30 @@ export class Kernel {
             return;
         }
 
-        // --update
+        // --update: pull latest changes from the linked ~/.tyr git repo
         if (commandName === '--update') {
+            const shell = this.container.get().shell;
+            const gitDir = path.join(this.userRoot, '.git');
+            if (!fs.existsSync(gitDir)) {
+                console.log('~/.tyr no está vinculado a ningún repositorio git.');
+                console.log('Ejecuta: tyr --config --repo <url>  para vincularlo.');
+                return;
+            }
+            console.log('Actualizando ~/.tyr desde el repositorio...');
+            shell.cd(this.userRoot);
+            await shell.exec('git pull');
+            console.log('Actualización completada.');
+            return;
+        }
+
+        // --upgrade: update the Tyr npm package itself
+        if (commandName === '--upgrade') {
             const pkgPath = path.resolve(this.frameworkRoot, 'package.json');
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
             const shell = this.container.get().shell;
-            console.log(`Updating ${pkg.name}...`);
+            console.log(`Actualizando ${pkg.name}...`);
             await shell.exec(`npm update -g ${pkg.name}`);
-            console.log('Update complete. Run tyr --version to confirm.');
+            console.log('Actualización completada. Ejecuta tyr --version para confirmar.');
             return;
         }
 

@@ -10,8 +10,7 @@
   },
   "files": [
     "bin/",
-    "src/",
-    "config/"
+    "src/"
   ],
   "scripts": {
     "test": "vitest run",

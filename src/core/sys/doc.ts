@@ -304,7 +304,7 @@ if (!fs.existsSync('./package.json')) {
                         await run('ai', [name, prompt]);
 
                         res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: true, message: `Comando '${name}' generado correctamente en src/commands/${name}.tyr.ts` }));
+                        res.end(JSON.stringify({ success: true, message: `Comando '${name}' generado correctamente en ~/.tyr/commands/${name}.tyr.ts` }));
                     } catch (e: any) {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ success: false, message: e.message || 'Error al generar el comando.' }));

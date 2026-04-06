@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
-import dotenv from 'dotenv';
 import type { TyrContext } from '../Kernel';
 
 type AIProvider = 'claude' | 'openai' | 'gemini';
@@ -124,7 +123,6 @@ export default function ai({ logger, fs: tyrFs, frameworkRoot, run, fail }: TyrC
             );
         }
 
-        dotenv.config({ path: path.resolve(frameworkRoot, '.env'), override: true });
         const aiConfig = detectProvider();
         if (!aiConfig) {
             return fail(

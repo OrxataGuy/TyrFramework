@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
+import dotenv from 'dotenv';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { homedir } from 'os';
 import { Container } from './Container';
@@ -52,6 +53,10 @@ export class Kernel {
 
     public async boot(args: string[]): Promise<void> {
         const isDebug = args.includes('--debug');
+
+        // Load all env vars from ~/.tyr/.env once, before anything else
+        (dotenv as any).config({ path: path.join(this.userRoot, '.env'), quiet: true });
+
         await this.container.init(isDebug);
 
         // All commands live in ~/.tyr/map.yml — the framework ships no runtime commands

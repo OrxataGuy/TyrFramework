@@ -1,10 +1,5 @@
-import dotenv from 'dotenv';
 import path from 'path';
-import { homedir } from 'os';
 import sql, { config as SQLConfig } from 'mssql';
-
-// Load credentials from ~/.tyr/.env — silently, optional
-(dotenv as any).config({ path: path.join(homedir(), '.tyr', '.env'), quiet: true });
 
 /**
  * @class SQLManager

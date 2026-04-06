@@ -21,6 +21,21 @@ function detectShellRcFile(homeDir: string): string | null {
 
 // ─── File templates ───────────────────────────────────────────────────────────
 
+const ENV_TEMPLATE = `# ~/.tyr/.env
+# Variables de entorno para Tyr. Este archivo nunca debe subirse a git.
+#
+# Base de datos SQL Server
+MSSQL_USER=
+MSSQL_PASSWORD=
+MSSQL_SERVER=
+MSSQL_DATABASE=
+#
+# Proveedores de IA (tyr ai)
+CLAUDE_API_KEY=
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+`;
+
 const SH_ALIASES_TEMPLATE = `# ~/.tyr/aliases
 # Añade aquí tus aliases personalizados.
 # Este archivo se carga automáticamente por tu shell.
@@ -160,6 +175,13 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
             const mapPath = path.join(userRoot, 'map.yml');
             await tyrFs.write(mapPath, 'commands: {}\n');
             logger.success(`Archivo creado: ${mapPath}`);
+
+            // Write .env template
+            const envPath = path.join(userRoot, '.env');
+            if (!tyrFs.exists(envPath)) {
+                await tyrFs.write(envPath, ENV_TEMPLATE);
+                logger.success(`Archivo creado: ${envPath}`);
+            }
 
             // If linked to a repo, commit and push
             if (repoUrl) {

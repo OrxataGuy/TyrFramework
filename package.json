@@ -1,5 +1,5 @@
 {
-  "name": "tyr.framework.cli",
+  "name": "@orxataguy/tyr",
   "version": "1.0.0",
   "type": "module",
   "bin": {
@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "prepare": "node -e \"const{existsSync}=require('fs');if(!process.env.CI&&existsSync('.git'))require('child_process').execSync('husky',{stdio:'inherit'})\"",
+    "prepare": "node -e \"const{existsSync}=require('fs'),cp=require('child_process'),p=require('path');if(!process.env.CI&&existsSync('.git')){const b=p.join('node_modules','.bin','husky'+(process.platform==='win32'?'.cmd':''));cp.execSync(b,{stdio:'inherit',shell:process.platform==='win32'});}\"",
     "release:patch": "npm version patch && git push --follow-tags",
     "release:minor": "npm version minor && git push --follow-tags",
     "release:major": "npm version major && git push --follow-tags",

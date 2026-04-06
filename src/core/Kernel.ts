@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { homedir } from 'os';
 import { Container } from './Container';
 
@@ -172,7 +172,9 @@ export class Kernel {
                 ? scriptPath
                 : path.resolve(this.frameworkRoot, scriptPath);
 
-            const module = await import(absolutePath);
+            // Convert to file:// URL — required by ESM on Windows for absolute paths
+            const moduleUrl = pathToFileURL(absolutePath).href;
+            const module = await import(moduleUrl);
 
             if (typeof module.default !== 'function') {
                 throw new Error(`File ${scriptPath} does not export a default function.`);

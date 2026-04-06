@@ -22,8 +22,9 @@ describe('Logger', () => {
     });
 
     describe('createLogger()', () => {
-        it('should create the log directory on init', () => {
-            createLogger(false);
+        it('should create the log directory on first write', () => {
+            const logger = createLogger(false);
+            logger.log('trigger write');
             expect(mkdirSpy).toHaveBeenCalled();
         });
 

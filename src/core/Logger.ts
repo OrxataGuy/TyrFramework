@@ -15,12 +15,15 @@ export function createLogger(isDebug: boolean): Logger {
     const logDir = path.join(homedir(), '.tyr', 'logs');
     const logFile = path.join(logDir, `${new Date().toISOString().slice(0, 10)}.log`);
 
-    fs.mkdirSync(logDir, { recursive: true });
-
     const writeToFile = (level: string, msg: any) => {
-        const timestamp = new Date().toISOString();
-        const line = `[${timestamp}] [${level}] ${String(msg)}\n`;
-        fs.appendFileSync(logFile, line, 'utf-8');
+        try {
+            fs.mkdirSync(logDir, { recursive: true });
+            const timestamp = new Date().toISOString();
+            const line = `[${timestamp}] [${level}] ${String(msg)}\n`;
+            fs.appendFileSync(logFile, line, 'utf-8');
+        } catch {
+            // Logging failures must never crash the application
+        }
     };
 
     return {

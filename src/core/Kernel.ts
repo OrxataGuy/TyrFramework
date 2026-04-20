@@ -11,6 +11,7 @@ import rem from './sys/rem';
 import doc from './sys/doc';
 import ai from './sys/ai';
 import config from './sys/config';
+import help from './sys/help';
 
 import { TyrError } from './TyrError';
 
@@ -123,6 +124,20 @@ export class Kernel {
             console.log(`Actualizando ${pkg.name}...`);
             await shell.exec(`npm update -g ${pkg.name}`);
             console.log('Actualización completada. Ejecuta tyr --version para confirmar.');
+            return;
+        }
+
+        // --help / -h: lista todos los comandos disponibles con su documentación
+        if (commandName === '--help' || commandName === '-h') {
+            const helpContext = {
+                ...this.container.get(),
+                frameworkRoot: this.frameworkRoot,
+                userRoot: this.userRoot,
+                run: async () => {},
+                task: async <T>(_: string, action: () => Promise<T> | T) => action(),
+                fail: (msg: string) => { throw new Error(msg); },
+            } as any;
+            await help(helpContext)(args.slice(1));
             return;
         }
 

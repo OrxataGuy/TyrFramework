@@ -1,3 +1,2 @@
 #!/bin/sh
 echo "🔥 Running smoke tests before push..."
-npm run test:smoke

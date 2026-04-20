@@ -64,6 +64,65 @@ export class GitManager {
             throw new TyrError(`Could not find the repository ` + repoUrl, e, 'Check if the repository exists or if you have the right permissions to clone it.');
         }
     }
+
+    /**
+     * @method cloneTo
+     * @description Clones a remote repository into a specific target directory.
+     * @param {string} repoUrl - The HTTPS or SSH URL of the repository.
+     * @param {string} destDir - The absolute path of the destination directory.
+     * @example
+     * await git.cloneTo('git@github.com:org/repo.git', '/path/to/dest');
+     */
+    public async cloneTo(repoUrl: string, destDir: string): Promise<void> {
+        this.logger.info(`Clonando ${repoUrl}...`);
+        const loader = this.shell.showLoader('Clonando repositorio...');
+        try {
+            await this.shell.exec(`git clone "${repoUrl}" "${destDir}"`);
+            await this.shell.exec(`git -C "${destDir}" config --add core.filemode false`);
+            loader.stop();
+            this.logger.success('Clonación completada.');
+        } catch (e) {
+            loader.stop();
+            throw new TyrError(`No se pudo clonar el repositorio: ${repoUrl}`, e, 'Comprueba que el repositorio existe y que tienes permisos para clonarlo.');
+        }
+    }
+
+    /**
+     * @method checkRepoExists
+     * @description Checks if a remote Git repository is accessible via ls-remote.
+     * @param {string} repoUrl - The URL of the repository to check.
+     * @returns {Promise<boolean>} True if the repository is reachable.
+     * @example
+     * const exists = await git.checkRepoExists('git@github.com:org/repo.git');
+     */
+    public async checkRepoExists(repoUrl: string): Promise<boolean> {
+        try {
+            await this.shell.exec(`git ls-remote "${repoUrl}" HEAD`);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * @method initWithRemote
+     * @description Removes an existing .git folder if present, then initialises a new Git repository
+     * in the given directory and configures a remote origin.
+     * @param {string} dir - The absolute path of the directory to initialise.
+     * @param {string} remoteUrl - The remote URL to set as origin.
+     * @example
+     * await git.initWithRemote('/path/to/dir', 'git@github.com:org/repo.git');
+     */
+    public async initWithRemote(dir: string, remoteUrl: string): Promise<void> {
+        try {
+            await this.shell.exec(
+                `cd "${dir}" && rm -rf .git && git init -b master && git remote add origin "${remoteUrl}" && git config --add core.filemode false && echo 'node_modules' >> .gitignore`
+            );
+            this.logger.success(`Repositorio Git inicializado en ${dir}`);
+        } catch (e) {
+            throw new TyrError(`No se pudo inicializar el repositorio en ${dir}`, e);
+        }
+    }
 }
 
 /**

@@ -6,6 +6,8 @@ import { GitManager } from '../lib/GitManager.js';
 import { SystemManager } from '../lib/SystemManager.js';
 import { SQLManager } from '../lib/SQLManager.js';
 import { WebManager } from '../lib/WebManager.js';
+import { WorkspaceManager } from '../lib/WorkspaceManager.js';
+import { JiraManager } from '../lib/JiraManager.js';
 import { Logger, createLogger } from './Logger.js';
 
 export type { Logger };
@@ -20,6 +22,8 @@ export interface ServiceContainer {
     sys: SystemManager;
     db: SQLManager;
     web: WebManager;
+    workspace: WorkspaceManager;
+    jira: JiraManager;
 }
 
 export class Container {
@@ -33,17 +37,21 @@ export class Container {
         const logger = createLogger(isDebug);
         const shell = new ShellManager();
         const db = new SQLManager();
+        const web = new WebManager(logger);
+        const fs = new FileSystemManager(logger);
 
         this.services = {
             logger,
             shell,
             db,
-            web: new WebManager(logger),
-            fs: new FileSystemManager(logger),
+            web,
+            fs,
             pkg: new PackageManager(shell, logger),
             docker: new DockerManager(shell, logger),
             git: new GitManager(shell, logger),
             sys: new SystemManager(shell, logger),
+            workspace: new WorkspaceManager(shell, fs, logger),
+            jira: new JiraManager(web, shell, logger),
         };
     }
 

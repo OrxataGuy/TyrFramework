@@ -104,6 +104,86 @@ export class ShellManager {
 
         this.cwd = resolve(this.cwd, expandedPath);
     }
+
+    /**
+     * @method getCwd
+     * @description Returns the current working directory used by this instance.
+     * @returns {string} The current working directory.
+     * @example
+     * const dir = shell.getCwd();
+     */
+    public getCwd(): string {
+        return this.cwd;
+    }
+
+    /**
+     * @method confirm
+     * @description Prompts the user with a yes/no question via CLI.
+     * @param {string} question - The question to display.
+     * @param {boolean} defaultValue - Default answer if user presses Enter (default: false).
+     * @returns {Promise<boolean>} True if the user confirmed.
+     * @example
+     * const ok = await shell.confirm('¿Continuar?', false);
+     */
+    public async confirm(question: string, defaultValue: boolean = false): Promise<boolean> {
+        try {
+            const result = await inquirer.prompt([{
+                type: 'confirm',
+                name: 'value',
+                message: question,
+                default: defaultValue,
+            }]);
+            return result.value;
+        } catch (e) {
+            throw new TyrError(`Error al mostrar la confirmación: ${question}`, e);
+        }
+    }
+
+    /**
+     * @method select
+     * @description Prompts the user to select one option from a list.
+     * @param {Array<{name: string, value: string}>} choices - The available options.
+     * @param {string} question - The question to display.
+     * @returns {Promise<string>} The selected value.
+     * @example
+     * const branch = await shell.select([{ name: 'main', value: 'main' }], '¿Qué rama?');
+     */
+    public async select(choices: { name: string; value: string }[], question: string): Promise<string> {
+        try {
+            const result = await inquirer.prompt([{
+                type: 'list',
+                name: 'value',
+                message: question,
+                choices,
+            }]);
+            return result.value;
+        } catch (e) {
+            throw new TyrError(`Error al mostrar la selección: ${question}`, e);
+        }
+    }
+
+    /**
+     * @method checkbox
+     * @description Prompts the user to select multiple options from a list.
+     * @param {Array<{name: string, value: string}>} choices - The available options.
+     * @param {string} question - The question to display.
+     * @returns {Promise<string[]>} The selected values.
+     * @example
+     * const widgets = await shell.checkbox(choices, '¿Qué widgets incluir?');
+     */
+    public async checkbox(choices: { name: string; value: string }[], question: string): Promise<string[]> {
+        try {
+            const result = await inquirer.prompt([{
+                type: 'checkbox',
+                name: 'value',
+                message: question,
+                choices,
+            }]);
+            return result.value;
+        } catch (e) {
+            throw new TyrError(`Error al mostrar las opciones: ${question}`, e);
+        }
+    }
 }
 
 /**
@@ -114,5 +194,8 @@ export const ShellManagerTests = {
     exec: { command: 'node -v' },
     cd: { path: '/tmp' },
     input: { question: 'Enter a test value:' },
-    showLoader: { message: 'Loading test...' }
+    showLoader: { message: 'Loading test...' },
+    confirm: { question: '¿Continuar?', defaultValue: false },
+    select: { choices: [{ name: 'Opción A', value: 'a' }, { name: 'Opción B', value: 'b' }], question: '¿Cuál eliges?' },
+    checkbox: { choices: [{ name: 'Item 1', value: '1' }, { name: 'Item 2', value: '2' }], question: '¿Cuáles quieres?' },
 };

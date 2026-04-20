@@ -19,9 +19,28 @@ export class FileSystemManager {
     }
 
     private resolvePath(filePath: string): string {
-        return filePath.startsWith('~/')
-            ? path.join(homedir(), filePath.slice(2))
-            : filePath;
+        return this.expandPath(filePath);
+    }
+
+    /**
+     * @method expandPath
+     * @description Expands `~` and `$HOME` in a path string to the actual home directory.
+     * Useful for reading paths from environment variables (dotenv does not expand shell variables).
+     * @param {string} filePath - The path to expand.
+     * @returns {string} The expanded absolute path.
+     * @example
+     * const dir = fs.expandPath(process.env.INTEGRATIONS_DIR!);
+     * // "~/dev/datosBroker" → "/Users/mandreu/dev/datosBroker"
+     */
+    public expandPath(filePath: string): string {
+        const home = homedir();
+        if (filePath.startsWith('~/') || filePath === '~') {
+            return path.join(home, filePath.slice(1));
+        }
+        if (filePath.startsWith('$HOME/') || filePath === '$HOME') {
+            return path.join(home, filePath.slice(5));
+        }
+        return filePath;
     }
 
     /**

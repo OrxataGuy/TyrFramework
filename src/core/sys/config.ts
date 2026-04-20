@@ -59,6 +59,33 @@ function detectShellRcFile(homeDir: string): string | null {
     return fallbacks.find(p => existsSync(p)) ?? path.join(homeDir, '.bashrc');
 }
 
+const PACKAGE_JSON_TEMPLATE = `{
+  "name": "tyr-commands",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Comandos personalizados de Tyr (~/.tyr/)",
+  "dependencies": {
+    "@orxataguy/tyr": "latest"
+  }
+}
+`;
+
+const TSCONFIG_TEMPLATE = `{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["commands/**/*.ts"]
+}
+`;
+
 const ENV_TEMPLATE = `# ~/.tyr/.env
 # Variables de entorno para Tyr. Este archivo nunca debe subirse a git.
 #
@@ -220,6 +247,27 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
                 logger.success(`Archivo creado: ${envPath}`);
             }
 
+            const packageJsonPath = path.join(userRoot, 'package.json');
+            if (!tyrFs.exists(packageJsonPath)) {
+                await tyrFs.write(packageJsonPath, PACKAGE_JSON_TEMPLATE);
+                logger.success(`Archivo creado: ${packageJsonPath}`);
+            }
+
+            const tsconfigPath = path.join(userRoot, 'tsconfig.json');
+            if (!tyrFs.exists(tsconfigPath)) {
+                await tyrFs.write(tsconfigPath, TSCONFIG_TEMPLATE);
+                logger.success(`Archivo creado: ${tsconfigPath}`);
+            }
+
+            logger.info('\nInstalando dependencias de tipos en ~/.tyr...');
+            shell.cd(userRoot);
+            try {
+                await shell.exec('npm install');
+                logger.success('Dependencias instaladas correctamente.');
+            } catch {
+                logger.warn('No se pudo ejecutar npm install en ~/.tyr. Hazlo manualmente.');
+            }
+
             if (repoUrl) {
                 logger.info('\nSubiendo configuración inicial al repositorio...');
                 shell.cd(userRoot);
@@ -231,6 +279,35 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
                 } catch (e) {
                     logger.warn('No se pudo hacer push automático. Hazlo manualmente desde ~/.tyr');
                 }
+            }
+        }
+
+        // Garantizar package.json + tsconfig.json + npm install siempre,
+        // tanto en init fresh como al clonar un repo existente.
+        const packageJsonPath = path.join(userRoot, 'package.json');
+        const tsconfigPath    = path.join(userRoot, 'tsconfig.json');
+        let needsInstall = false;
+
+        if (!tyrFs.exists(packageJsonPath)) {
+            await tyrFs.write(packageJsonPath, PACKAGE_JSON_TEMPLATE);
+            logger.success(`Archivo creado: ${packageJsonPath}`);
+            needsInstall = true;
+        }
+
+        if (!tyrFs.exists(tsconfigPath)) {
+            await tyrFs.write(tsconfigPath, TSCONFIG_TEMPLATE);
+            logger.success(`Archivo creado: ${tsconfigPath}`);
+            needsInstall = true;
+        }
+
+        if (needsInstall) {
+            logger.info('\nInstalando dependencias de tipos en ~/.tyr...');
+            shell.cd(userRoot);
+            try {
+                await shell.exec('npm install');
+                logger.success('Dependencias instaladas.');
+            } catch {
+                logger.warn('No se pudo ejecutar npm install en ~/.tyr. Hazlo manualmente.');
             }
         }
 

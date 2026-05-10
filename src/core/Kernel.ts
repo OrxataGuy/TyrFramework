@@ -4,17 +4,16 @@ import yaml from 'js-yaml';
 import dotenv from 'dotenv';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { homedir } from 'os';
-import { Container } from './Container.ts';
+import { Container } from './Container';
 
-import gen   from './sys/gen.ts';
-import rem   from './sys/rem.ts';
-import doc   from './sys/doc.ts';
-import ai    from './sys/ai.ts';
-import build from './sys/build.ts';
-import config from './sys/config.ts';
-import help   from './sys/help.ts';
+import gen from './sys/gen';
+import rem from './sys/rem';
+import doc from './sys/doc';
+import ai from './sys/ai';
+import config from './sys/config';
+import help from './sys/help';
 
-import { TyrError } from './TyrError.ts';
+import { TyrError } from './TyrError';
 
 interface TyrConfig {
     commands: Record<string, string>;
@@ -45,13 +44,6 @@ export class Kernel {
     private config: TyrConfig | null;
     private frameworkRoot: string;
     private userRoot: string;
-
-    /**
-     * In-process cache of CommandFactory functions keyed by command name.
-     * Avoids re-importing (and re-transpiling via the ESM loader) the same
-     * module on every run() call within the same process.
-     */
-    private readonly _commandCache = new Map<string, CommandFactory>();
 
     constructor() {
         this.container = new Container();
@@ -188,7 +180,6 @@ export class Kernel {
             rem,
             doc,
             ai,
-            build,
         };
 
         if (systemCommands[commandName]) {
@@ -213,37 +204,20 @@ export class Kernel {
         }
 
         try {
-            let commandFactory: CommandFactory;
+            // Absolute paths (user commands) are used directly; relative paths resolve from frameworkRoot
+            const absolutePath = path.isAbsolute(scriptPath)
+                ? scriptPath
+                : path.resolve(this.frameworkRoot, scriptPath);
 
-            if (this._commandCache.has(commandName)) {
-                // Fast path: factory already imported in this process — no I/O at all
-                commandFactory = this._commandCache.get(commandName)!;
-            } else {
-                // Absolute paths (user commands) are used directly; relative paths resolve from frameworkRoot
-                const absolutePath = path.isAbsolute(scriptPath)
-                    ? scriptPath
-                    : path.resolve(this.frameworkRoot, scriptPath);
+            // Convert to file:// URL — required by ESM on Windows for absolute paths
+            const moduleUrl = pathToFileURL(absolutePath).href;
+            const module = await import(moduleUrl);
 
-                // Prefer a pre-compiled JS file produced by `tyr build` (AOT path).
-                // Convention: ~/.tyr/dist/<basename>.js  where basename = original filename with .ts → .js
-                const distFile = path.basename(absolutePath).replace(/\.ts$/, '.js');
-                const distPath = path.join(this.userRoot, 'dist', distFile);
-                const resolvedPath = fs.existsSync(distPath) ? distPath : absolutePath;
-
-                // Convert to file:// URL — required by ESM on Windows for absolute paths
-                const moduleUrl = pathToFileURL(resolvedPath).href;
-                const module = await import(moduleUrl);
-
-                if (typeof module.default !== 'function') {
-                    throw new Error(`File ${scriptPath} does not export a default function.`);
-                }
-
-                commandFactory = module.default as CommandFactory;
-                this._commandCache.set(commandName, commandFactory);
+            if (typeof module.default !== 'function') {
+                throw new Error(`File ${scriptPath} does not export a default function.`);
             }
 
-            // Always build a fresh command instance so the context (logger, run, fail…)
-            // reflects the current invocation — important for nested run() calls.
+            const commandFactory: CommandFactory = module.default;
             const command = commandFactory(context);
             await command(args.slice(1));
 

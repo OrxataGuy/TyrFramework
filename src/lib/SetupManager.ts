@@ -41,10 +41,9 @@ export class SetupManager {
                 : [['apk', 'apk'], ['apt-get', 'apt'], ['brew', 'brew'], ['dnf', 'dnf']];
 
         for (const [bin, name] of candidates) {
-            const found = await this.shell.exec(
-                `which ${bin} 2>/dev/null && echo yes || echo no`
-            ).catch(() => 'no');
-            if (found.trim() === 'yes') return name;
+            const found = await this.shell.exec(`which ${bin} >/dev/null 2>&1`)
+                .then(() => true).catch(() => false);
+            if (found) return name;
         }
         return 'unknown';
     }
@@ -85,10 +84,8 @@ export class SetupManager {
      * if (!await setup.binExists('docker')) fail('Docker is required.');
      */
     public async binExists(bin: string): Promise<boolean> {
-        const result = await this.shell.exec(
-            `which ${bin} 2>/dev/null && echo yes || echo no`
-        ).catch(() => 'no');
-        return result.trim() === 'yes';
+        return this.shell.exec(`which ${bin} >/dev/null 2>&1`)
+            .then(() => true).catch(() => false);
     }
 
     // ── docker-compose file introspection ───────────────────────────────────

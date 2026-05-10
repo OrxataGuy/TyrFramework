@@ -14,7 +14,7 @@ import build from './sys/build.ts';
 import config from './sys/config.ts';
 import help   from './sys/help.ts';
 
-import { TyrError } from './TyrError';
+import { TyrError } from './TyrError.ts';
 
 interface TyrConfig {
     commands: Record<string, string>;

@@ -12,7 +12,7 @@
  * NODE_NO_WARNINGS suppresses the deprecation notice.
  */
 
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { spawn } from 'child_process';
 
@@ -20,12 +20,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 
 const loaderPath = join(__dirname, 'loader.mjs');
+const loaderUrl  = pathToFileURL(loaderPath).href;   // file:// URL — required on Windows
 const entry      = join(__dirname, 'tyr.ts');
 
 const child = spawn(
     process.execPath,
     [
-        '--loader', loaderPath,
+        '--loader', loaderUrl,
         '--no-warnings',        // suppress ExperimentalWarning for --loader in Node 22
         entry,
         ...process.argv.slice(2),

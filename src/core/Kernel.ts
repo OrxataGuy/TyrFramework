@@ -4,15 +4,15 @@ import yaml from 'js-yaml';
 import dotenv from 'dotenv';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { homedir } from 'os';
-import { Container } from './Container';
+import { Container } from './Container.ts';
 
-import gen   from './sys/gen';
-import rem   from './sys/rem';
-import doc   from './sys/doc';
-import ai    from './sys/ai';
-import build from './sys/build';
-import config from './sys/config';
-import help   from './sys/help';
+import gen   from './sys/gen.ts';
+import rem   from './sys/rem.ts';
+import doc   from './sys/doc.ts';
+import ai    from './sys/ai.ts';
+import build from './sys/build.ts';
+import config from './sys/config.ts';
+import help   from './sys/help.ts';
 
 import { TyrError } from './TyrError';
 

@@ -13,10 +13,54 @@
  */
 
 import { transformSync } from 'esbuild';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
+import { existsSync, readFileSync } from 'fs';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { resolve as resolvePath, dirname } from 'path';
 
-const TS_RE = /\.m?[ct]?ts$/;
+const TS_RE       = /\.m?[ct]?ts$/;
+const NO_EXT_RE   = /\/[^./]+$/;          // path segment with no extension at the end
+const EXT_MAP     = { '.js': '.ts', '.mjs': '.mts', '.cjs': '.cts' };
+const BARE_EXTS   = ['.ts', '.mts', '.cts', '.js', '.mjs', '/index.ts', '/index.js'];
+
+/**
+ * resolve() — handle two TypeScript-in-ESM conventions that Node cannot resolve natively:
+ *
+ *  1. Extensionless imports:  './Container'  →  './Container.ts'
+ *  2. JS-extension imports:   './Foo.js'     →  './Foo.ts'  (TypeScript ESM idiom)
+ *
+ * Only relative imports are intercepted; bare specifiers (npm packages) go straight
+ * to the default resolver.
+ */
+export function resolve(specifier, context, next) {
+    if (!specifier.startsWith('.') || !context.parentURL) {
+        return next(specifier, context);
+    }
+
+    const parentDir = dirname(fileURLToPath(context.parentURL));
+    const fullPath  = resolvePath(parentDir, specifier);
+
+    // Case 1: specifier ends with a JS extension — try the equivalent TS extension
+    for (const [jsExt, tsExt] of Object.entries(EXT_MAP)) {
+        if (specifier.endsWith(jsExt)) {
+            const tsPath = fullPath.slice(0, -jsExt.length) + tsExt;
+            if (existsSync(tsPath)) {
+                return { url: pathToFileURL(tsPath).href, shortCircuit: true };
+            }
+        }
+    }
+
+    // Case 2: extensionless — probe TS then JS extensions
+    if (NO_EXT_RE.test(fullPath)) {
+        for (const ext of BARE_EXTS) {
+            const candidate = fullPath + ext;
+            if (existsSync(candidate)) {
+                return { url: pathToFileURL(candidate).href, shortCircuit: true };
+            }
+        }
+    }
+
+    return next(specifier, context);
+}
 
 /**
  * load() — intercept every ESM import whose URL ends in a TypeScript extension.

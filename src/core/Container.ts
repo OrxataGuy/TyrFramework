@@ -12,10 +12,13 @@ import { JiraManager } from '../lib/JiraManager.js';
 import { SetupManager } from '../lib/SetupManager.js';
 import { Logger, createLogger } from './Logger.js';
 
+import path from 'path';
+
 export type { Logger };
 
 export interface ServiceContainer {
     logger: Logger;
+    path: typeof path;
     shell: ShellManager;
     fs: FileSystemManager;
     pkg: PackageManager;
@@ -47,6 +50,7 @@ export class Container {
 
         this.services = {
             logger,
+            path,
             shell,
             db,
             mongo,

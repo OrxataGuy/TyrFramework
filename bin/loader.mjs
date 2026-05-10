@@ -20,10 +20,17 @@ const TS_RE = /\.m?[ct]?ts$/;
 
 /**
  * load() — intercept every ESM import whose URL ends in a TypeScript extension.
- * Files inside node_modules are never transformed (they ship as JS already).
+ *
+ * We do NOT exclude node_modules: the tyr package itself ships as .ts source
+ * (bin/tyr.ts, src/core/Kernel.ts, etc.) and those files ARE under node_modules
+ * when installed globally. Node.js 24's built-in strip-types refuses to handle
+ * .ts files under node_modules, so our loader must cover them.
+ *
+ * The TS_RE regex already limits interception to .ts/.mts/.cts files — the
+ * compiled .js files that third-party packages ship will never match it.
  */
 export function load(url, context, next) {
-    const isTs = TS_RE.test(url) && !url.includes('/node_modules/');
+    const isTs = TS_RE.test(url);
     if (!isTs) return next(url, context);
 
     const filePath = fileURLToPath(url);

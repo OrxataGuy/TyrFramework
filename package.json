@@ -22,6 +22,9 @@
     "release:patch": "npm version patch && git push --follow-tags",
     "release:minor": "npm version minor && git push --follow-tags",
     "release:major": "npm version major && git push --follow-tags",
+    "release:beta": "npm version prerelease --preid=beta && git push --follow-tags && npm publish --tag beta",
+    "release:beta:minor": "npm version preminor --preid=beta && git push --follow-tags && npm publish --tag beta",
+    "release:beta:major": "npm version premajor --preid=beta && git push --follow-tags && npm publish --tag beta",
     "config": "node bin/tyr.js install"
   },
   "keywords": [

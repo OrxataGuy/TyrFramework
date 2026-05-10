@@ -5,9 +5,11 @@ import { DockerManager } from '../lib/DockerManager.js';
 import { GitManager } from '../lib/GitManager.js';
 import { SystemManager } from '../lib/SystemManager.js';
 import { SQLManager } from '../lib/SQLManager.js';
+import { MongoManager } from '../lib/MongoManager.js';
 import { WebManager } from '../lib/WebManager.js';
 import { WorkspaceManager } from '../lib/WorkspaceManager.js';
 import { JiraManager } from '../lib/JiraManager.js';
+import { SetupManager } from '../lib/SetupManager.js';
 import { Logger, createLogger } from './Logger.js';
 
 export type { Logger };
@@ -21,9 +23,11 @@ export interface ServiceContainer {
     git: GitManager;
     sys: SystemManager;
     db: SQLManager;
+    mongo: MongoManager;
     web: WebManager;
     workspace: WorkspaceManager;
     jira: JiraManager;
+    setup: SetupManager;
 }
 
 export class Container {
@@ -37,6 +41,7 @@ export class Container {
         const logger = createLogger(isDebug);
         const shell = new ShellManager();
         const db = new SQLManager();
+        const mongo = new MongoManager();
         const web = new WebManager(logger);
         const fs = new FileSystemManager(logger);
 
@@ -44,6 +49,7 @@ export class Container {
             logger,
             shell,
             db,
+            mongo,
             web,
             fs,
             pkg: new PackageManager(shell, logger),
@@ -52,6 +58,7 @@ export class Container {
             sys: new SystemManager(shell, logger),
             workspace: new WorkspaceManager(shell, fs, logger),
             jira: new JiraManager(web, shell, logger),
+            setup: new SetupManager(shell, fs, logger),
         };
     }
 

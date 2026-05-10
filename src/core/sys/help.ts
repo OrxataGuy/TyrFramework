@@ -82,6 +82,7 @@ export default function help({ userRoot }: TyrContext) {
             { name: '--update',  description: 'Actualiza ~/.tyr desde el repositorio git.', usage: 'tyr --update' },
             { name: '--upgrade', description: 'Actualiza el paquete npm de tyr.',           usage: 'tyr --upgrade' },
             { name: 'gen',       description: 'Genera un nuevo comando a partir de una descripción con IA.', usage: 'tyr gen <nombre> "<descripción>"' },
+            { name: 'build',     description: 'Compila AOT todos los comandos de map.yml a JS puro (elimina overhead de transpilación en ejecución).', usage: 'tyr build [--clean]' },
             { name: 'doc',       description: 'Levanta la documentación del framework en el navegador.', usage: 'tyr doc' },
         ];
 

@@ -194,7 +194,6 @@ if (!fs.existsSync('./package.json')) {
             <nav>
                 <h3 style="color: #888; text-transform: uppercase; font-size: 0.8rem;">Módulos TS</h3>
                 ${docs.map(d => `<a href="#${d.name}">📦 ${d.name.replace('.ts', '')}</a>`).join('')}
-                <a href="#ai-generator" style="margin-top: 20px; background: #4db8ff; color: #000; font-weight: bold;">🤖 Generador IA</a>
             </nav>
             <main>
                 ${docs.map(d => `
@@ -210,80 +209,7 @@ if (!fs.existsSync('./package.json')) {
                         `).join('')}
                     </div>
                 `).join('')}
-                
-                <div id="ai-generator" class="prompt-box">
-                    <h2>🤖 Generador de Comandos con IA</h2>
-                    <p style="color: #bbb; margin-bottom: 20px;">
-                        Describe qué debe hacer tu comando y la IA lo generará automáticamente usando la documentación del framework.
-                    </p>
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; color: #4db8ff; margin-bottom: 5px; font-weight: bold;">Nombre del comando</label>
-                        <input type="text" id="cmd-name" placeholder="mi-comando"
-                            style="width: 100%; padding: 10px; background: #2d2d2d; border: 1px solid #444; color: #eee; border-radius: 5px; font-size: 1em; box-sizing: border-box;" />
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; color: #4db8ff; margin-bottom: 5px; font-weight: bold;">Describe qué debe hacer el comando</label>
-                        <textarea id="cmd-prompt" rows="6" placeholder="Ej: Crea un comando que liste todos los contenedores Docker activos y muestre su estado en una tabla formateada..."
-                            style="width: 100%; padding: 10px; background: #2d2d2d; border: 1px solid #444; color: #eee; border-radius: 5px; font-size: 1em; resize: vertical; box-sizing: border-box;"></textarea>
-                    </div>
-                    <button id="generate-btn" onclick="generateCommand()"
-                        style="background: #4db8ff; color: #000; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1em; transition: 0.2s; width: 100%;">
-                        Generar Comando
-                    </button>
-                    <div id="gen-status" style="margin-top: 15px; display: none; padding: 15px; border-radius: 5px;"></div>
-                </div>
             </main>
-            <script>
-                async function generateCommand() {
-                    const name = document.getElementById('cmd-name').value.trim();
-                    const prompt = document.getElementById('cmd-prompt').value.trim();
-                    const btn = document.getElementById('generate-btn');
-                    const status = document.getElementById('gen-status');
-
-                    if (!name || !prompt) {
-                        status.style.display = 'block';
-                        status.style.background = '#4a2020';
-                        status.style.border = '1px solid #ff4444';
-                        status.textContent = 'Rellena ambos campos.';
-                        return;
-                    }
-
-                    btn.disabled = true;
-                    btn.textContent = 'Generando...';
-                    btn.style.background = '#888';
-                    status.style.display = 'block';
-                    status.style.background = '#1a1a2e';
-                    status.style.border = '1px solid #4db8ff';
-                    status.textContent = 'Enviando prompt a la IA... Esto puede tardar unos segundos.';
-
-                    try {
-                        const res = await fetch('/generate', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ name, prompt })
-                        });
-                        const data = await res.json();
-
-                        if (data.success) {
-                            status.style.background = '#1a2e1a';
-                            status.style.border = '1px solid #4ade80';
-                            status.textContent = data.message;
-                        } else {
-                            status.style.background = '#4a2020';
-                            status.style.border = '1px solid #ff4444';
-                            status.textContent = data.message;
-                        }
-                    } catch (e) {
-                        status.style.background = '#4a2020';
-                        status.style.border = '1px solid #ff4444';
-                        status.textContent = 'Error de conexión con el servidor.';
-                    }
-
-                    btn.disabled = false;
-                    btn.textContent = 'Generar Comando';
-                    btn.style.background = '#4db8ff';
-                }
-            </script>
         </body>
         </html>`;
 

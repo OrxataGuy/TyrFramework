@@ -9,7 +9,6 @@ import { Container } from './Container';
 import gen from './sys/gen';
 import rem from './sys/rem';
 import doc from './sys/doc';
-import ai from './sys/ai';
 import config from './sys/config';
 import help from './sys/help';
 
@@ -179,7 +178,6 @@ export class Kernel {
             gen,
             rem,
             doc,
-            ai,
         };
 
         if (systemCommands[commandName]) {

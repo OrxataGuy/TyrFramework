@@ -94,11 +94,9 @@ MSSQL_USER=
 MSSQL_PASSWORD=
 MSSQL_SERVER=
 MSSQL_DATABASE=
-#
-# Proveedores de IA (tyr ai)
-CLAUDE_API_KEY=
-OPENAI_API_KEY=
-GEMINI_API_KEY=
+# Basde de datos de Mongo
+MONGO_URI=
+MONGO_DATABASE=
 `;
 
 const SH_ALIASES_TEMPLATE = `# ~/.tyr/aliases

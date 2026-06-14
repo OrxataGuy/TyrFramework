@@ -1,408 +1,335 @@
-# Tyr Framework - Guía Completa del Proyecto
+<p align="center">
+  <img src=".github/data/logo.png" alt="Tyr Framework" width="180" />
+</p>
 
-**Autor:** Manel Andreu Pérez  
-**Versión:** 1.0.0  
-**Licencia:** MIT
+<h1 align="center">Tyr Framework</h1>
 
----
+<p align="center">
+  A TypeScript-native CLI framework for building, running, and composing automation tools — with zero boilerplate.
+</p>
 
-## 📋 Descripción del Proyecto
-
-Tyr Framework es un entorno de ejecución basado en TypeScript que permite crear, ejecutar y automatizar herramientas CLI de manera declarativa.
-
-La arquitectura se construye sobre **inyección de dependencias**: el "Kernel" proporciona un contexto de ejecución donde los "Managers" exponen su funcionalidad a través de una API auto-generada. Gracias a un sistema de introspección de código, el entorno analiza tipos y documentación en tiempo real.
-
----
-
-## 📁 Estructura del Proyecto
-
-```
-/
-├── bin/
-│   └── tyr.ts                    // Punto de entrada del CLI
-│
-├── src/
-│   ├── core/
-│   │   ├── Kernel.ts             // Motor principal de ejecución
-│   │   ├── Container.ts          // Contenedor de servicios (inyección de dependencias)
-│   │   ├── TyrError.ts           // Manejo de errores personalizado
-│   │   └── sys/
-│   │       ├── gen.ts            // Comando: generar nuevos comandos
-│   │       ├── rem.ts            // Comando: remover comandos
-│   │       └── doc.ts            // Comando: generar documentación
-│   │
-│   ├── commands/
-│   │   ├── install.tyr.ts        // Comando: instalar el framework
-│   │   └── dw.tyr.ts             // Comando: descargar dependencias
-│   │
-│   └── lib/
-│       ├── ShellManager.ts       // Ejecución de comandos shell
-│       ├── FileSystemManager.ts  // Operaciones del sistema de archivos
-│       ├── PackageManager.ts     // Gestión de paquetes (npm)
-│       ├── DockerManager.ts      // Integración con Docker
-│       ├── GitManager.ts         // Operaciones de Git
-│       ├── SystemManager.ts      // Gestión del sistema
-│       ├── SQLManager.ts         // Consultas a bases de datos MSSQL
-│       └── WebManager.ts         // Requests HTTP
-│
-├── tests/
-│   ├── commands.test.ts          // Tests de comandos (Vitest)
-│   ├── test-runner.ts            // Runner de smoke tests
-│   └── setup.ts                  // Configuración de mocks
-│
-├── config/
-│   └── map.yml                   // Configuración de comandos del framework
-│
-├── local/
-│   ├── aliases.sh                // Alias de shell personalizados
-│   └── plugins.sh                // Plugins para shell
-│
-├── package.json                  // Dependencias y scripts
-├── tsconfig.json                 // Configuración de TypeScript
-├── vitest.config.ts              // Configuración de tests
-└── html-reporter.ts              // Generador de reportes HTML
-```
+<p align="center">
+  <a href="https://www.npmjs.com/package/@orxataguy/tyr"><img src="https://img.shields.io/npm/v/@orxataguy/tyr.svg" alt="npm version" /></a>
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
+  <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node 18+" />
+  <img src="https://img.shields.io/badge/TypeScript-5.x-blue" alt="TypeScript" />
+</p>
 
 ---
 
-## 🎯 Conceptos Clave
+## What is Tyr?
 
-### 1. KERNEL (`src/core/Kernel.ts`)
+Tyr solves the fragmentation problem in DevOps scripting. Instead of maintaining scattered shell scripts, ad-hoc Node utilities, and undocumented automation glue, Tyr gives you a single, typed, dependency-injected context from which every command operates.
 
-- **Orquestador principal** del framework
-- Carga configuración desde `config/map.yml`
-- Enruta comandos hacia sus manejadores
-- Proporciona el contexto de ejecución (`TyrContext`)
-- **Métodos principales:**
-  - `boot(args)`: Inicializa el framework
-  - `handle(args)`: Ejecuta comandos
-
-### 2. CONTAINER (`src/core/Container.ts`)
-
-- Contenedor de **inyección de dependencias**
-- Instancia todos los servicios (Managers)
-- Expone interfaz `ServiceContainer` con todos los servicios
-- Implementa patrón Singleton para servicios
-
-### 3. MANAGERS (`src/lib/*.ts`)
-
-Conjunto de abstracciones sobre librerías externas. Ejecutar comando de documentación para saber más.
-
-```bash
-tyr doc
-```
-
-### 4. COMANDOS
-
-Son funciones que siguen el patrón:
-
-```typescript
-export default ({ task, fail, logger, fs, shell }: TyrContext) => {
-    return async (args: string[]) => {
-        // Lógica del comando
-    };
-};
-```
-
-Los comandos personalizados se registran en `config/map.yml`
-
-### 5. CONFIGURACIÓN (`config/map.yml`)
-
-Define los comandos disponibles:
-
-```yaml
-commands:
-  install: ./src/commands/install.tyr.ts
-  dw: ./src/commands/dw.tyr.ts
-```
+You write a function. Tyr takes care of everything else — argument routing, dependency resolution, error formatting, and live documentation.
 
 ---
 
-## 🚀 Cómo Usar el Framework
-
-### Instalación
+## Installation
 
 ```bash
-npm install
-npm run install        # Ejecuta el comando install
+npm install -g @orxataguy/tyr
 ```
 
-### Ejecutar Comandos
+Or as a project dependency:
 
 ```bash
-tyr <nombre-comando> [argumentos]
+npm install @orxataguy/tyr
 ```
 
-**Ejemplos:**
-- `tyr install` - Instala y configura el framework
-- `tyr gen micomando` - Genera un nuevo comando
-- `tyr rem micomando` - Elimina un comando
-- `tyr doc` - Genera documentación
-- `tyr dw` - Descarga dependencias
-
-### Crear un Nuevo Comando
+After installing, run the setup command to initialize Tyr in your project:
 
 ```bash
-tyr gen <nombre-comando> <nombre-archivo>
+tyr install
 ```
 
-Se creará el archivo en `src/commands/<nombre-archivo>.tyr.ts`:
+This creates the expected folder structure and registers the `tyr` alias in your shell config.
+
+---
+
+## Quick Start
+
+### 1. Create a command
+
+```bash
+tyr gen greet greet
+```
+
+This generates `src/commands/greet.tyr.ts` and registers it in `config/map.yml`.
+
+### 2. Edit the command
 
 ```typescript
 import { TyrContext } from '../core/Kernel';
 
-export default ({ task, fail, logger, fs, shell }: TyrContext) => {
+export default ({ task, fail, logger }: TyrContext) => {
     return async (args: string[]) => {
-        // Validar argumentos
         if (args.length === 0) {
-            fail('Se requiere al menos un argumento');
+            fail('A name is required', 'Usage: tyr greet <name>');
         }
-        
-        // Usar tareas con descripción
-        await task('Realizando acción', async () => {
-            logger.info('Procesando...');
-            // Tu lógica aquí
+
+        await task('Greeting', async () => {
+            logger.success(`Hello, ${args[0]}!`);
         });
-        
-        logger.success('¡Listo!');
     };
 };
 ```
 
-### Eliminarc un Comando Existente
-```bash
-tyr rem <nombre-comando>
-```
-
-
----
-
-## 🧪 Testing
-
-El framework incluye un sistema de testing completo:
-
-### Tests Unitarios (Vitest)
+### 3. Run it
 
 ```bash
-npm run test              # Ejecutar tests
-npm run test:watch        # Modo watch
-npm run test:ui           # UI interactivo
-npm run test:coverage     # Cobertura
-```
-
-### Smoke Tests
-
-```bash
-npm run test:smoke        # Valida que todos los comandos cargan correctamente
-```
-
-**Verifica:**
-- Comandos cargan como módulos
-- Exportan función por defecto
-- Se instancian con contexto
-- Se ejecutan sin excepciones no controladas
-
-### Mocks
-
-El archivo `tests/setup.ts` proporciona `createMockContext()` que mocka:
-- Logger
-- ShellManager
-- FileSystemManager
-- Todos los managers
-
----
-
-## 📊 Flujo de Ejecución
-
-```
-1. Usuario ejecuta: tyr micomando arg1 arg2
-   ↓
-2. bin/tyr.ts captura el comando
-   ↓
-3. Kernel.boot() inicializa el framework
-   ↓
-4. Container.init() crea todos los Managers
-   ↓
-5. Carga config/map.yml
-   ↓
-6. Kernel.handle() recibe [micomando, arg1, arg2]
-   ↓
-7. Busca el comando en la configuración
-   ↓
-8. Importa el módulo dinámicamente
-   ↓
-9. Instancia el comando pasando TyrContext
-   ↓
-10. Ejecuta comando(args)
-    ↓
-11. Retorna resultado o error
+tyr greet World
 ```
 
 ---
 
-## 📦 Dependencias Principales
+## Core Concepts
 
-### Runtime
+### Kernel
 
-- **chalk** - Colores en terminal
-- **execa** - Ejecución de shell mejorada
-- **axios** - HTTP client
-- **mssql** - Driver MSSQL
-- **js-yaml** - Parser YAML
-- **inquirer** - Prompts interactivos
-- **dotenv** - Variables de entorno
-- **cheerio** - Web scraping
-- **find-config** - Búsqueda de archivos de config
+The Kernel is the main engine. It boots on every invocation, loads `config/map.yml`, resolves the command name to a module, and executes it with a fully-wired `TyrContext`.
 
-### Dev
+You never instantiate the Kernel directly — it runs automatically via `bin/tyr.js`.
 
-- **TypeScript** - Lenguaje
-- **Vitest** - Testing framework
-- **tsx** - Ejecutor TypeScript
-- **Vite** - Build tool
-- **Husky** - Git hooks
+### Container & Dependency Injection
 
----
-
-## 🔧 Configuración Importante
-
-### tsconfig.json
-- `target`: ES2020
-- `module`: ES2020
-- `moduleResolution`: node
-
-### package.json
-- `type`: module (módulos ES)
-- `bin`: { tyr: ./bin/tyr.ts }
-
-### vitest.config.ts
-- Test runner del proyecto
-- Configuración de mocks y setup
-
----
-
-## 🎨 Patrones y Best Practices
-
-### Inyección de Dependencias
+All services (Managers) are instantiated once by the `Container` and injected into every command via `TyrContext`. You never import a Manager directly — you destructure it from the context:
 
 ```typescript
-const command = ({ logger, fs, shell }: TyrContext) => {
-    // Los managers se inyectan automáticamente
-    return async (args) => { ... };
+export default ({ shell, fs, git, logger }: TyrContext) => {
+    return async (args: string[]) => {
+        const branch = await git.currentBranch();
+        logger.info(`On branch: ${branch}`);
+    };
 };
 ```
 
-### Manejo de Errores
+### TyrContext
 
-- Usa `fail(message, suggestion?)` para errores controlados
-- `fail()` lanza `TyrError`
-- Los comandos pueden capturar y manejar excepciones
+The object injected into every command. It exposes all available Managers plus framework utilities:
 
-### Tareas con Descripción
+| Property | Type | Description |
+|---|---|---|
+| `logger` | Logger | Colored terminal output |
+| `task` | Function | Wraps async ops with error context |
+| `fail` | Function | Throws a controlled `TyrError` |
+| `run` | Function | Invokes another Tyr command programmatically |
+| `shell` | ShellManager | Execute shell commands |
+| `fs` | FileSystemManager | File and directory operations |
+| `pkg` | PackageManager | npm package management |
+| `docker` | DockerManager | Docker container operations |
+| `git` | GitManager | Git operations |
+| `system` | SystemManager | OS-level utilities |
+| `sql` | SQLManager | MSSQL database queries |
+| `web` | WebManager | HTTP requests and web scraping |
+
+### Commands
+
+A command is an exported default function that takes a `TyrContext` and returns an async handler:
 
 ```typescript
-await task('Descripción', async () => {
-    // Operación
+export default (context: TyrContext) => {
+    return async (args: string[]) => {
+        // your logic here
+    };
+};
+```
+
+Commands are registered in `config/map.yml`:
+
+```yaml
+commands:
+  greet: ./src/commands/greet.tyr.ts
+  deploy: ./src/commands/deploy.tyr.ts
+```
+
+---
+
+## Built-in Commands
+
+### `tyr gen <command-name> [output-file]`
+
+Scaffolds a new command file and registers it in `config/map.yml`.
+
+```bash
+tyr gen deploy deploy
+# creates src/commands/deploy.tyr.ts
+```
+
+### `tyr rem <command-name>`
+
+Removes the command file and its entry from `config/map.yml`.
+
+```bash
+tyr rem deploy
+```
+
+### `tyr doc`
+
+Parses JSDoc from all Managers and serves an interactive HTML reference at `http://localhost:3000`. Useful for discovering available methods without leaving your terminal.
+
+```bash
+tyr doc
+# → Open http://localhost:3000
+```
+
+---
+
+## Context API Reference
+
+### `task(label, fn)`
+
+Wraps an async operation. If it throws, Tyr captures the error, adds the label as context, and formats a clean error message — no manual `try/catch` needed.
+
+```typescript
+const result = await task('Building project', async () => {
+    return await shell.exec('npm run build');
 });
-// Muestra progreso en terminal
 ```
 
-### Logging
+### `fail(message, suggestion?)`
+
+Immediately stops command execution with a formatted error. Optionally include a suggestion to guide the user.
 
 ```typescript
-logger.info()     // Información general
-logger.success()  // Operación exitosa
-logger.error()    // Error (solo en debug)
-logger.warn()     // Advertencia (solo en debug)
-```
-
-### Argumentos de Comando
-
-Siempre valida los argumentos al inicio:
-
-```typescript
-if (args.length < 2) {
-    fail('Se requieren 2 argumentos', 'Sintaxis: tyr cmd arg1 arg2');
+if (!args[0]) {
+    fail('Missing required argument: name', 'Run: tyr greet <name>');
 }
 ```
 
----
+### `run(commandName, args)`
 
-## 📚 Comandos Disponibles
+Invokes another registered Tyr command from within a command. Enables command composition.
 
-### Comandos del Sistema
-
-#### `tyr gen <nombre-comando> [archivo-salida]`
-Genera un nuevo comando con template
-- Crea archivo en `src/commands/`
-- Registra en `config/map.yml`
-
-#### `tyr rem <nombre-comando>`
-Elimina un comando
-- Borra archivo del comando
-- Elimina entrada en `config/map.yml`
-
-#### `tyr doc`
-Genera documentación completa del sistema
-- Analiza todos los comandos
-- Extrae tipos y comentarios JSDoc
-- Genera HTML interactivo
-
-### Comandos Personalizados
-
-#### `tyr install`
-Instala y configura el framework
-- Crea estructura de carpetas
-- Copia templates
-- Configura alias 'tyre' en .zshrc
-
-#### `tyr dw`
-Descarga y configura dependencias
-- Instala paquetes npm
-- Configura variables de entorno
-- Verifica instalaciones externas
-
----
-
-## 🐛 Debugging
-
-Ejecuta con flag `--debug` para ver más información:
-
-```bash
-tyr micomando --debug
+```typescript
+await run('install', ['--force']);
 ```
 
-- Activa logging de errores y warnings
-- Muestra detalles de operaciones
+### `logger`
+
+Standardized colored output. Warnings and errors are suppressed unless `--debug` is passed.
+
+```typescript
+logger.info('Starting...');
+logger.success('Done.');
+logger.warn('Skipping optional step.');
+logger.error('Something went wrong.');
+```
 
 ---
 
-## 📝 Notas de Desarrollo
+## Error Handling
 
-- El framework usa módulos ES6, asegúrate de `"type": "module"` en `package.json`
-- Los comandos deben ser `async`
-- Siempre retorna del handler o lanza error
-- Usa la inyección de dependencias, no importes managers directamente
-- Los tests usan mocks automáticos del `setup.ts`
-- El smoke test valida que todos los comandos cargan correctamente
+Tyr distinguishes between controlled and uncontrolled errors.
+
+**Controlled** — use `fail()` for expected validation failures:
+```typescript
+fail('Config file not found', 'Create a config.yml in the project root.');
+```
+
+**Uncontrolled** — wrap risky operations in `task()`:
+```typescript
+await task('Connecting to database', async () => {
+    await sql.connect(connectionString);
+});
+```
+
+Run any command with `--debug` to see the full stack trace:
+
+```bash
+tyr deploy --debug
+```
 
 ---
 
-## 🔗 Referencias Útiles
+## Project Structure
 
-Archivos principales para empezar:
-
-- [src/core/Kernel.ts](src/core/Kernel.ts) - Entender cómo funciona el motor
-- [src/core/Container.ts](src/core/Container.ts) - Ver cómo se inyectan dependencias
-- [src/commands/install.tyr.ts](src/commands/install.tyr.ts) - Ejemplo de comando completo
-- [src/core/sys/gen.ts](src/core/sys/gen.ts) - Cómo generar nuevos comandos
-- [tests/test-runner.ts](tests/test-runner.ts) - Sistema de testing
+```
+├── bin/
+│   └── tyr.js                 # CLI entry point
+├── src/
+│   ├── core/
+│   │   ├── Kernel.ts          # Command router and execution engine
+│   │   ├── Container.ts       # Dependency injection container
+│   │   ├── TyrError.ts        # Structured error type
+│   │   └── sys/
+│   │       ├── gen.ts         # Built-in: scaffold a command
+│   │       ├── rem.ts         # Built-in: remove a command
+│   │       └── doc.ts         # Built-in: serve live documentation
+│   ├── commands/
+│   │   └── *.tyr.ts           # Your custom commands go here
+│   └── lib/
+│       ├── ShellManager.ts
+│       ├── FileSystemManager.ts
+│       ├── PackageManager.ts
+│       ├── DockerManager.ts
+│       ├── GitManager.ts
+│       ├── SystemManager.ts
+│       ├── SQLManager.ts
+│       └── WebManager.ts
+├── config/
+│   └── map.yml                # Command registry
+└── tests/
+    ├── setup.ts               # Mock context factory
+    └── test-runner.ts         # Smoke test runner
+```
 
 ---
 
-## Licencia
+## Testing
 
-**Autor:** Manel Andreu Pérez  
-**Versión:** 1.0.0  
-**Licencia:** MIT  
-**Tipo de proyecto:** CLI Framework para Automatización DevOps
+### Unit tests
+
+```bash
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # Coverage report
+npm run test:ui       # Interactive Vitest UI
+```
+
+### Smoke tests
+
+Validates that every registered command loads correctly, exports a default function, and can be instantiated without errors:
+
+```bash
+npm run test:smoke
+```
+
+### Writing tests
+
+Use `createMockContext()` from `tests/setup.ts` to get a fully mocked `TyrContext`:
+
+```typescript
+import { createMockContext } from '../tests/setup';
+import myCommand from '../src/commands/my-command.tyr';
+
+test('my command runs', async () => {
+    const ctx = createMockContext();
+    const handler = myCommand(ctx);
+    await handler(['arg1']);
+    expect(ctx.logger.success).toHaveBeenCalled();
+});
+```
+
+---
+
+## Dependencies
+
+| Package | Purpose |
+|---|---|
+| `chalk` | Terminal colors |
+| `execa` | Shell command execution |
+| `axios` | HTTP requests |
+| `inquirer` | Interactive prompts |
+| `js-yaml` | YAML config parsing |
+| `mssql` | MSSQL database driver |
+| `mongodb` | MongoDB driver |
+| `cheerio` | HTML parsing / web scraping |
+| `dotenv` | Environment variable loading |
+| `tsx` | TypeScript execution |
+
+---
+
+## License
+
+MIT — [Manel Andreu Pérez](https://github.com/orxataguy)

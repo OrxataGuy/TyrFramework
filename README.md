@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@orxataguy/tyr"><img src="https://img.shields.io/npm/v/@orxataguy/tyr.svg" alt="npm version" /></a>
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
+  <img src="https://img.shields.io/badge/license-CC%20BY%204.0-lightgrey.svg" alt="CC BY 4.0 License" />
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node 18+" />
   <img src="https://img.shields.io/badge/TypeScript-5.x-blue" alt="TypeScript" />
 </p>
@@ -330,6 +330,34 @@ test('my command runs', async () => {
 
 ---
 
+## NPM & Community
+
+Tyr is published on npm as [`@orxataguy/tyr`](https://www.npmjs.com/package/@orxataguy/tyr).
+
+The project follows a hybrid open community model — the main repository is open, and contributors are encouraged to publish their own forks under their own npm scope. You do not need permission from the maintainer to fork, improve, or publish your own version.
+
+### Publishing your own distribution
+
+1. Fork this repository
+2. Make your changes
+3. Update the `name` field in `package.json` to your own npm scope:
+   ```json
+   "name": "@yourname/tyr"
+   ```
+4. Add your `NPM_TOKEN` as a secret in your forked repo settings, then push a tag like `v1.0.0` — the release workflow will handle the rest automatically
+5. Users can then install your version with:
+   ```bash
+   npm i @yourname/tyr
+   ```
+
+If you want your fork listed as a community distribution, open a PR adding it to [`COMMUNITY.md`](COMMUNITY.md).
+
+---
+
 ## License
 
-MIT — [Manel Andreu Pérez](https://github.com/orxataguy)
+Tyr is licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+
+You are free to use, modify, and distribute this project — including for commercial purposes — as long as you give appropriate credit to the original author.
+
+**Author:** [Manel Andreu Pérez](https://github.com/orxataguy)

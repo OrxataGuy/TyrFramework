@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@orxataguy/tyr"><img src="https://img.shields.io/npm/v/@orxataguy/tyr.svg" alt="npm version" /></a>
-  <img src="https://img.shields.io/badge/license-CC%20BY%204.0-lightgrey.svg" alt="CC BY 4.0 License" />
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node 18+" />
   <img src="https://img.shields.io/badge/TypeScript-5.x-blue" alt="TypeScript" />
 </p>
@@ -356,8 +356,4 @@ If you want your fork listed as a community distribution, open a PR adding it to
 
 ## License
 
-Tyr is licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
-
-You are free to use, modify, and distribute this project — including for commercial purposes — as long as you give appropriate credit to the original author.
-
-**Author:** [Manel Andreu Pérez](https://github.com/orxataguy)
+MIT — [Manel Andreu Pérez](https://github.com/orxataguy)

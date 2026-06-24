@@ -54,12 +54,10 @@ export class Kernel {
     public async boot(args: string[]): Promise<void> {
         const isDebug = args.includes('--debug');
 
-        // Load all env vars from ~/.tyr/.env once, before anything else
         (dotenv as any).config({ path: path.join(this.userRoot, '.env'), quiet: true });
 
         await this.container.init(isDebug);
 
-        // All commands live in ~/.tyr/map.yml — the framework ships no runtime commands
         this.config = { commands: {}, aliases: {} };
 
         const userConfigPath = path.join(this.userRoot, 'map.yml');
@@ -67,7 +65,6 @@ export class Kernel {
             try {
                 const raw = yaml.load(fs.readFileSync(userConfigPath, 'utf8')) as TyrConfig;
                 for (const [name, cmdPath] of Object.entries(raw.commands ?? {})) {
-                    // Absolute paths used as-is; relative paths resolved from userRoot
                     this.config.commands[name] = path.isAbsolute(cmdPath)
                         ? cmdPath
                         : path.resolve(this.userRoot, cmdPath);
@@ -91,7 +88,6 @@ export class Kernel {
             return;
         }
 
-        // --version / -v
         if (commandName === '--version' || commandName === '-v') {
             const pkgPath = path.resolve(this.frameworkRoot, 'package.json');
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
@@ -99,7 +95,6 @@ export class Kernel {
             return;
         }
 
-        // --update: pull latest changes from the linked ~/.tyr git repo
         if (commandName === '--update') {
             const shell = this.container.get().shell;
             const gitDir = path.join(this.userRoot, '.git');
@@ -115,7 +110,6 @@ export class Kernel {
             return;
         }
 
-        // --upgrade: update the Tyr npm package itself
         if (commandName === '--upgrade') {
             const pkgPath = path.resolve(this.frameworkRoot, 'package.json');
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
@@ -126,7 +120,6 @@ export class Kernel {
             return;
         }
 
-        // --help / -h: lists all available commands with their documentation
         if (commandName === '--help' || commandName === '-h') {
             const helpContext = {
                 ...this.container.get(),
@@ -168,7 +161,6 @@ export class Kernel {
             fail: (msg: string, suggestion?: string) => { throw new TyrError(msg, null, suggestion, commandName); }
         };
 
-        // --config (needs context for fs/logger)
         if (commandName === '--config') {
             await config(context)(args.slice(1));
             return;
@@ -202,12 +194,10 @@ export class Kernel {
         }
 
         try {
-            // Absolute paths (user commands) are used directly; relative paths resolve from frameworkRoot
             const absolutePath = path.isAbsolute(scriptPath)
                 ? scriptPath
                 : path.resolve(this.frameworkRoot, scriptPath);
 
-            // Convert to file:// URL — required by ESM on Windows for absolute paths
             const moduleUrl = pathToFileURL(absolutePath).href;
             const module = await import(moduleUrl);
 

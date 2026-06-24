@@ -22,10 +22,6 @@ interface TyrConfig {
 export interface TyrContext {
     frameworkRoot: string;
     userRoot: string;
-    logger: any;
-    shell: any;
-    fs: any;
-    docker?: any;
     run: (commandName: string, args?: string[]) => Promise<void>;
     task: <T>(description: string, action: () => Promise<T> | T, next?: boolean, onFail?: () => void) => Promise<T | undefined>;
     fail: (msg: string, suggestion?: string) => never;

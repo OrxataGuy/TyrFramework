@@ -25,29 +25,29 @@ export class WorkspaceManager {
      * If it does, asks the user if they want to replace it (deleting it first).
      * Returns true if the caller should proceed with creating the workspace.
      * @param {string} dirPath - Absolute path to the workspace directory.
-     * @param {string} type - Human-readable type name shown in messages (e.g. 'integración', 'web').
+     * @param {string} type - Human-readable type name shown in messages (e.g. 'integration', 'web').
      * @returns {Promise<boolean>} True if the workspace can be created/overwritten.
      * @example
-     * const proceed = await workspace.checkExisting('/path/to/repo', 'integración');
+     * const proceed = await workspace.checkExisting('/path/to/repo', 'integration');
      * if (!proceed) return;
      */
-    public async checkExisting(dirPath: string, type: string = 'directorio'): Promise<boolean> {
+    public async checkExisting(dirPath: string, type: string = 'directory'): Promise<boolean> {
         if (!this.fs.exists(dirPath)) return true;
 
-        this.logger.warn(`Este ${type} ya existe: ${dirPath}`);
-        const replace = await this.shell.confirm('¿Quieres reemplazarlo?', false);
+        this.logger.warn(`This ${type} already exists: ${dirPath}`);
+        const replace = await this.shell.confirm('Do you want to replace it?', false);
 
         if (!replace) {
-            this.logger.info('Operación cancelada.');
+            this.logger.info('Operation cancelled.');
             return false;
         }
 
         try {
             await this.shell.exec(`rm -rf "${dirPath}"`);
-            this.logger.info('Directorio existente eliminado.');
+            this.logger.info('Existing directory removed.');
             return true;
         } catch (e) {
-            throw new TyrError(`No se pudo eliminar el directorio existente: ${dirPath}`, e);
+            throw new TyrError(`Could not remove existing directory: ${dirPath}`, e);
         }
     }
 
@@ -65,9 +65,9 @@ export class WorkspaceManager {
         if (branch) {
             try {
                 await this.shell.exec(`git -C "${dir}" checkout -b ${branch}`);
-                this.logger.success(`Rama '${branch}' creada.`);
+                this.logger.success(`Branch '${branch}' created.`);
             } catch (e) {
-                this.logger.warn(`No se pudo crear la rama '${branch}'. Puede que ya exista.`);
+                this.logger.warn(`Could not create branch '${branch}'. It may already exist.`);
             }
         }
 
@@ -75,13 +75,13 @@ export class WorkspaceManager {
             try {
                 await this.shell.exec(`code "${dir}"`);
             } catch {
-                this.logger.warn('No se pudo abrir VSCode. Asegúrate de tener el comando "code" instalado.');
+                this.logger.warn('Could not open VSCode. Make sure the "code" command is installed.');
             }
         }
     }
 }
 
 export const WorkspaceManagerTests = {
-    checkExisting: { dirPath: '/tmp/tyr-workspace-test', type: 'integración' },
+    checkExisting: { dirPath: '/tmp/tyr-workspace-test', type: 'integration' },
     tagWorkspace: { dir: '/tmp/tyr-workspace-test', branch: null, openCode: false },
 };

@@ -64,7 +64,7 @@ const PACKAGE_JSON_TEMPLATE = `{
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "description": "Comandos personalizados de Tyr (~/.tyr/)",
+  "description": "Custom Tyr commands (~/.tyr/)",
   "dependencies": {
     "@orxataguy/tyr": "latest"
   }
@@ -87,47 +87,47 @@ const TSCONFIG_TEMPLATE = `{
 `;
 
 const ENV_TEMPLATE = `# ~/.tyr/.env
-# Variables de entorno para Tyr. Este archivo nunca debe subirse a git.
+# Environment variables for Tyr. This file must never be committed to git.
 #
-# Base de datos SQL Server
+# SQL Server database
 MSSQL_USER=
 MSSQL_PASSWORD=
 MSSQL_SERVER=
 MSSQL_DATABASE=
-# Basde de datos de Mongo
+# MongoDB database
 MONGO_URI=
 MONGO_DATABASE=
 `;
 
 const SH_ALIASES_TEMPLATE = `# ~/.tyr/aliases
-# Añade aquí tus aliases personalizados.
-# Este archivo se carga automáticamente por tu shell.
+# Add your custom aliases here.
+# This file is loaded automatically by your shell.
 #
-# Ejemplos:
+# Examples:
 #   alias gs='git status'
 #   alias tyr-deploy='tyr deploy'
 `;
 
 const SH_PLUGINS_TEMPLATE = `# ~/.tyr/plugins
-# Añade aquí tus plugins de shell.
-# Compatible con zsh, bash y otros shells POSIX.
+# Add your shell plugins here.
+# Compatible with zsh, bash and other POSIX shells.
 #
-# Ejemplos (zsh):
+# Examples (zsh):
 #   source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 `;
 
 const PS_ALIASES_TEMPLATE = `# ~/.tyr/aliases.ps1
-# Añade aquí tus aliases personalizados para PowerShell.
+# Add your custom aliases for PowerShell here.
 #
-# Ejemplos:
+# Examples:
 #   Set-Alias gs git-status
 #   function tyr-deploy { tyr deploy @args }
 `;
 
 const PS_PLUGINS_TEMPLATE = `# ~/.tyr/plugins.ps1
-# Añade aquí tus módulos y plugins de PowerShell.
+# Add your PowerShell modules and plugins here.
 #
-# Ejemplos:
+# Examples:
 #   Import-Module posh-git
 #   Import-Module PSReadLine
 `;
@@ -141,8 +141,8 @@ function makeTimestamp(): string {
 async function configureUnixShell(tyrFs: any, logger: any, homeDir: string, aliasesPath: string, pluginsPath: string): Promise<void> {
     const rcFile = detectShellRcFile(homeDir);
     if (!rcFile) {
-        logger.warn('No se pudo detectar el archivo de configuración del shell.');
-        logger.info(`Añade manualmente:\n  source "${aliasesPath}"\n  source "${pluginsPath}"`);
+        logger.warn('Could not detect shell configuration file.');
+        logger.info(`Add manually:\n  source "${aliasesPath}"\n  source "${pluginsPath}"`);
         return;
     }
     await tyrFs.ensureLine(rcFile, `source "${aliasesPath}"`);
@@ -156,14 +156,14 @@ async function configureWindowsShell(tyrFs: any, logger: any, aliasesPath: strin
         ? path.join(process.env.USERPROFILE, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1')
         : null;
     if (!psProfile) {
-        logger.warn('No se pudo detectar el perfil de PowerShell.');
-        logger.info(`Añade manualmente:\n  . "${aliasesPath}"\n  . "${pluginsPath}"`);
+        logger.warn('Could not detect PowerShell profile.');
+        logger.info(`Add manually:\n  . "${aliasesPath}"\n  . "${pluginsPath}"`);
         return;
     }
     await tyrFs.ensureLine(psProfile, `. "${aliasesPath}"`);
     await tyrFs.ensureLine(psProfile, `. "${pluginsPath}"`);
-    logger.success(`Perfil de PowerShell configurado: ${psProfile}`);
-    logger.info('Reinicia PowerShell para aplicar los cambios.');
+    logger.success(`PowerShell profile configured: ${psProfile}`);
+    logger.info('Restart PowerShell to apply the changes.');
 }
 
 export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrContext) {
@@ -178,8 +178,8 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
         const repoUrl = repoIndex !== -1 ? (args[repoIndex + 1] ?? null) : null;
 
         if (repoIndex !== -1 && (!repoUrl || repoUrl.startsWith('--'))) {
-            logger.error('Falta la URL del repositorio.');
-            logger.info('Uso: tyr --config --repo <url>');
+            logger.error('Repository URL is missing.');
+            logger.info('Usage: tyr --config --repo <url>');
             return;
         }
 
@@ -187,7 +187,7 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
         if (existsSync(userRoot)) {
             backupPath = `${userRoot}.bak.${makeTimestamp()}`;
             backupUserRoot(userRoot, backupPath);
-            logger.warn(`Configuración anterior respaldada en: ${backupPath}`);
+            logger.warn(`Previous configuration backed up at: ${backupPath}`);
         }
 
                let repoHasContent = false;
@@ -197,7 +197,7 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
                 try { removeDirRecursive(tempDir); } catch {}
             }
 
-            logger.info(`\nClonando repositorio: ${repoUrl}`);
+            logger.info(`\nCloning repository: ${repoUrl}`);
             try {
                 await shell.exec(`git clone "${repoUrl}" "${tempDir}"`);
             } catch (e) {
@@ -209,8 +209,8 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
 
             repoHasContent = existsSync(path.join(tempDir, 'map.yml'));
             logger.success(repoHasContent
-                ? 'Repositorio clonado con configuración existente.'
-                : 'Repositorio vacío — iniciando configuración por defecto...');
+                ? 'Repository cloned with existing configuration.'
+                : 'Empty repository — starting default configuration...');
 
             clearDirExceptLogs(userRoot);
             copyDirContents(tempDir, userRoot);
@@ -218,64 +218,64 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
         }
 
         if (!repoHasContent) {
-            logger.info('\nInicializando ~/.tyr...\n');
+            logger.info('\nInitializing ~/.tyr...\n');
 
             await tyrFs.createDir(path.join(userRoot, 'commands'));
-            logger.success(`Directorio creado: ${path.join(userRoot, 'commands')}`);
+            logger.success(`Directory created: ${path.join(userRoot, 'commands')}`);
 
             const aliasesPath = path.join(userRoot, `aliases${ext}`);
             if (!tyrFs.exists(aliasesPath)) {
                 await tyrFs.write(aliasesPath, isWindows ? PS_ALIASES_TEMPLATE : SH_ALIASES_TEMPLATE);
-                logger.success(`Archivo creado: ${aliasesPath}`);
+                logger.success(`File created: ${aliasesPath}`);
             }
 
             const pluginsPath = path.join(userRoot, `plugins${ext}`);
             if (!tyrFs.exists(pluginsPath)) {
                 await tyrFs.write(pluginsPath, isWindows ? PS_PLUGINS_TEMPLATE : SH_PLUGINS_TEMPLATE);
-                logger.success(`Archivo creado: ${pluginsPath}`);
+                logger.success(`File created: ${pluginsPath}`);
             }
 
             const mapPath = path.join(userRoot, 'map.yml');
             await tyrFs.write(mapPath, 'commands: {}\n');
-            logger.success(`Archivo creado: ${mapPath}`);
+            logger.success(`File created: ${mapPath}`);
 
             const envPath = path.join(userRoot, '.env');
             if (!tyrFs.exists(envPath)) {
                 await tyrFs.write(envPath, ENV_TEMPLATE);
-                logger.success(`Archivo creado: ${envPath}`);
+                logger.success(`File created: ${envPath}`);
             }
 
             const packageJsonPath = path.join(userRoot, 'package.json');
             if (!tyrFs.exists(packageJsonPath)) {
                 await tyrFs.write(packageJsonPath, PACKAGE_JSON_TEMPLATE);
-                logger.success(`Archivo creado: ${packageJsonPath}`);
+                logger.success(`File created: ${packageJsonPath}`);
             }
 
             const tsconfigPath = path.join(userRoot, 'tsconfig.json');
             if (!tyrFs.exists(tsconfigPath)) {
                 await tyrFs.write(tsconfigPath, TSCONFIG_TEMPLATE);
-                logger.success(`Archivo creado: ${tsconfigPath}`);
+                logger.success(`File created: ${tsconfigPath}`);
             }
 
-            logger.info('\nInstalando dependencias de tipos en ~/.tyr...');
+            logger.info('\nInstalling type dependencies in ~/.tyr...');
             shell.cd(userRoot);
             try {
                 await shell.exec('npm install');
-                logger.success('Dependencias instaladas correctamente.');
+                logger.success('Dependencies installed successfully.');
             } catch {
-                logger.warn('No se pudo ejecutar npm install en ~/.tyr. Hazlo manualmente.');
+                logger.warn('Could not run npm install in ~/.tyr. Run it manually.');
             }
 
             if (repoUrl) {
-                logger.info('\nSubiendo configuración inicial al repositorio...');
+                logger.info('\nPushing initial configuration to repository...');
                 shell.cd(userRoot);
                 try {
                     await shell.exec('git add .');
                     await shell.exec('git commit -m "Initial tyr configuration"');
                     await shell.exec('git push -u origin HEAD');
-                    logger.success('Configuración subida al repositorio.');
+                    logger.success('Configuration pushed to repository.');
                 } catch (e) {
-                    logger.warn('No se pudo hacer push automático. Hazlo manualmente desde ~/.tyr');
+                    logger.warn('Could not push automatically. Do it manually from ~/.tyr');
                 }
             }
         }
@@ -299,13 +299,13 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
         }
 
         if (needsInstall) {
-            logger.info('\nInstalando dependencias de tipos en ~/.tyr...');
+            logger.info('\nInstalling type dependencies in ~/.tyr...');
             shell.cd(userRoot);
             try {
                 await shell.exec('npm install');
-                logger.success('Dependencias instaladas.');
+                logger.success('Dependencies installed.');
             } catch {
-                logger.warn('No se pudo ejecutar npm install en ~/.tyr. Hazlo manualmente.');
+                logger.warn('Could not run npm install in ~/.tyr. Run it manually.');
             }
         }
 
@@ -321,11 +321,11 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
             }
         }
 
-        logger.success('\nTyr configurado correctamente.');
-        logger.info(`Directorio de configuración: ${userRoot}`);
-        if (repoUrl) logger.info(`Repositorio vinculado: ${repoUrl}`);
-        logger.info('\nPróximos pasos:');
-        logger.info('  tyr gen <nombre> <archivo>   Crear un nuevo comando');
-        logger.info('  tyr doc                      Ver documentación de la API');
+        logger.success('\nTyr configured successfully.');
+        logger.info(`Configuration directory: ${userRoot}`);
+        if (repoUrl) logger.info(`Linked repository: ${repoUrl}`);
+        logger.info('\nNext steps:');
+        logger.info('  tyr gen <name> <file>   Create a new command');
+        logger.info('  tyr doc                 View API documentation');
     };
 }

@@ -2,7 +2,7 @@ import { MongoClient, Db, Document, Filter, UpdateFilter, InsertOneResult, Inser
 
 /**
  * @class MongoManager
- * @description Conector con MongoDB que gestiona el ciclo de vida de la conexión y expone un CRUD genérico.
+ * @description MongoDB connector that manages the connection lifecycle and exposes a generic CRUD interface.
  */
 export class MongoManager {
   private client!: MongoClient;
@@ -32,10 +32,10 @@ export class MongoManager {
 
   /**
    * @method insertOne
-   * @description Inserta un documento en la colección indicada.
-   * @param {string} collection - Nombre de la colección.
-   * @param {Document} document - Documento a insertar.
-   * @returns {Promise<InsertOneResult>} Resultado de la inserción.
+   * @description Inserts a document into the specified collection.
+   * @param {string} collection - Collection name.
+   * @param {Document} document - Document to insert.
+   * @returns {Promise<InsertOneResult>} Insertion result.
    * @example
    * const result = await mongo.insertOne('users', { name: 'Ana', age: 30 });
    */
@@ -48,10 +48,10 @@ export class MongoManager {
 
   /**
    * @method insertMany
-   * @description Inserta múltiples documentos en la colección indicada.
-   * @param {string} collection - Nombre de la colección.
-   * @param {Document[]} documents - Array de documentos a insertar.
-   * @returns {Promise<InsertManyResult>} Resultado de la inserción.
+   * @description Inserts multiple documents into the specified collection.
+   * @param {string} collection - Collection name.
+   * @param {Document[]} documents - Array of documents to insert.
+   * @returns {Promise<InsertManyResult>} Insertion result.
    * @example
    * const result = await mongo.insertMany('users', [{ name: 'Ana' }, { name: 'Luis' }]);
    */
@@ -64,11 +64,11 @@ export class MongoManager {
 
   /**
    * @method findOne
-   * @description Busca el primer documento que coincida con el filtro.
-   * @param {string} collection - Nombre de la colección.
-   * @param {Filter<Document>} filter - Filtro de búsqueda.
-   * @param {FindOptions} [options] - Opciones adicionales (proyección, etc.).
-   * @returns {Promise<WithId<T> | null>} El documento encontrado o null.
+   * @description Finds the first document matching the filter.
+   * @param {string} collection - Collection name.
+   * @param {Filter<Document>} filter - Search filter.
+   * @param {FindOptions} [options] - Additional options (projection, etc.).
+   * @returns {Promise<WithId<T> | null>} The matching document or null.
    * @example
    * const user = await mongo.findOne('users', { name: 'Ana' });
    */
@@ -81,11 +81,11 @@ export class MongoManager {
 
   /**
    * @method find
-   * @description Busca todos los documentos que coincidan con el filtro.
-   * @param {string} collection - Nombre de la colección.
-   * @param {Filter<Document>} filter - Filtro de búsqueda. Usa {} para traer todos los documentos.
-   * @param {FindOptions} [options] - Opciones adicionales (proyección, límite, etc.).
-   * @returns {Promise<WithId<T>[]>} Array de documentos encontrados.
+   * @description Finds all documents matching the filter.
+   * @param {string} collection - Collection name.
+   * @param {Filter<Document>} filter - Search filter. Use {} to return all documents.
+   * @param {FindOptions} [options] - Additional options (projection, limit, etc.).
+   * @returns {Promise<WithId<T>[]>} Array of matching documents.
    * @example
    * const users = await mongo.find('users', { age: { $gte: 18 } });
    */
@@ -98,11 +98,11 @@ export class MongoManager {
 
   /**
    * @method updateOne
-   * @description Actualiza el primer documento que coincida con el filtro.
-   * @param {string} collection - Nombre de la colección.
-   * @param {Filter<Document>} filter - Filtro para identificar el documento.
-   * @param {UpdateFilter<Document>} update - Operación de actualización (ej: { $set: { field: value } }).
-   * @returns {Promise<UpdateResult>} Resultado de la actualización.
+   * @description Updates the first document matching the filter.
+   * @param {string} collection - Collection name.
+   * @param {Filter<Document>} filter - Filter to identify the document.
+   * @param {UpdateFilter<Document>} update - Update operation (e.g. { $set: { field: value } }).
+   * @returns {Promise<UpdateResult>} Update result.
    * @example
    * const result = await mongo.updateOne('users', { name: 'Ana' }, { $set: { age: 31 } });
    */
@@ -115,11 +115,11 @@ export class MongoManager {
 
   /**
    * @method updateMany
-   * @description Actualiza todos los documentos que coincidan con el filtro.
-   * @param {string} collection - Nombre de la colección.
-   * @param {Filter<Document>} filter - Filtro para identificar los documentos.
-   * @param {UpdateFilter<Document>} update - Operación de actualización.
-   * @returns {Promise<UpdateResult>} Resultado de la actualización.
+   * @description Updates all documents matching the filter.
+   * @param {string} collection - Collection name.
+   * @param {Filter<Document>} filter - Filter to identify the documents.
+   * @param {UpdateFilter<Document>} update - Update operation.
+   * @returns {Promise<UpdateResult>} Update result.
    * @example
    * const result = await mongo.updateMany('users', { active: false }, { $set: { active: true } });
    */
@@ -132,10 +132,10 @@ export class MongoManager {
 
   /**
    * @method deleteOne
-   * @description Elimina el primer documento que coincida con el filtro.
-   * @param {string} collection - Nombre de la colección.
-   * @param {Filter<Document>} filter - Filtro para identificar el documento.
-   * @returns {Promise<DeleteResult>} Resultado de la eliminación.
+   * @description Deletes the first document matching the filter.
+   * @param {string} collection - Collection name.
+   * @param {Filter<Document>} filter - Filter to identify the document.
+   * @returns {Promise<DeleteResult>} Deletion result.
    * @example
    * const result = await mongo.deleteOne('users', { name: 'Ana' });
    */
@@ -148,10 +148,10 @@ export class MongoManager {
 
   /**
    * @method deleteMany
-   * @description Elimina todos los documentos que coincidan con el filtro.
-   * @param {string} collection - Nombre de la colección.
-   * @param {Filter<Document>} filter - Filtro para identificar los documentos.
-   * @returns {Promise<DeleteResult>} Resultado de la eliminación.
+   * @description Deletes all documents matching the filter.
+   * @param {string} collection - Collection name.
+   * @param {Filter<Document>} filter - Filter to identify the documents.
+   * @returns {Promise<DeleteResult>} Deletion result.
    * @example
    * const result = await mongo.deleteMany('users', { active: false });
    */
@@ -165,7 +165,7 @@ export class MongoManager {
 
 /**
  * @object MongoManagerTests
- * @description Parámetros de pruebas para validar la funcionalidad de MongoManager.
+ * @description Test parameters to validate MongoManager functionality.
  */
 export const MongoManagerTests = {
   // insertOne: { collection: 'test', document: { name: 'test_doc', value: 1 } },

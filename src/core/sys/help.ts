@@ -9,8 +9,8 @@ interface CommandDoc {
 }
 
 /**
- * Extrae el primer bloque JSDoc de un archivo .tyr.ts y lo parsea
- * en descripción y ejemplos de uso.
+ * Extracts the first JSDoc block from a .tyr.ts file and parses it
+ * into a description and usage examples.
  */
 function parseCommandDoc(filePath: string): CommandDoc {
     const fileName = path.basename(filePath, '.tyr.ts');
@@ -21,12 +21,12 @@ function parseCommandDoc(filePath: string): CommandDoc {
         return { name: fileName, description: '', usage: '' };
     }
 
-    // Limpiar cada línea: eliminar el * inicial y espacios
+    // Clean each line: remove leading * and spaces
     const lines = match[1]
         .split('\n')
         .map(line => line.replace(/^\s*\*\s?/, '').trimEnd());
 
-    // Separar en descripción y bloque "Uso:"
+    // Split into description and "Usage:" block
     const usoIndex = lines.findIndex(l => /^uso:/i.test(l.trim()));
 
     let description = '';
@@ -70,19 +70,19 @@ export default function help({ userRoot }: TyrContext) {
         const separator = `${gray}  ${'─'.repeat(50)}${reset}`;
 
         console.log('');
-        console.log(`  ${bold}${cyan}tyr${reset}  ${white}Comandos disponibles${reset}`);
+        console.log(`  ${bold}${cyan}tyr${reset}  ${white}Available commands${reset}`);
         console.log(separator);
         console.log('');
 
-        // Flags y comandos built-in del framework
+        // Framework flags and built-in commands
         const builtins = [
-            { name: '--help',    description: 'Muestra este listado de comandos.',          usage: 'tyr --help' },
-            { name: '--version', description: 'Muestra la versión instalada de tyr.',       usage: 'tyr --version' },
-            { name: '--config',  description: 'Configura tyr por primera vez.',             usage: 'tyr --config' },
-            { name: '--update',  description: 'Actualiza ~/.tyr desde el repositorio git.', usage: 'tyr --update' },
-            { name: '--upgrade', description: 'Actualiza el paquete npm de tyr.',           usage: 'tyr --upgrade' },
-            { name: 'gen',       description: 'Genera un nuevo comando a partir de una descripción con IA.', usage: 'tyr gen <nombre> "<descripción>"' },
-            { name: 'doc',       description: 'Levanta la documentación del framework en el navegador.', usage: 'tyr doc' },
+            { name: '--help',    description: 'Shows this command listing.',                  usage: 'tyr --help' },
+            { name: '--version', description: 'Shows the installed version of tyr.',          usage: 'tyr --version' },
+            { name: '--config',  description: 'Configures tyr for the first time.',           usage: 'tyr --config' },
+            { name: '--update',  description: 'Updates ~/.tyr from the git repository.',      usage: 'tyr --update' },
+            { name: '--upgrade', description: 'Upgrades the tyr npm package.',                usage: 'tyr --upgrade' },
+            { name: 'gen',       description: 'Generates a new command from a description using AI.', usage: 'tyr gen <name> "<description>"' },
+            { name: 'doc',       description: 'Opens the framework documentation in the browser.', usage: 'tyr doc' },
         ];
 
         console.log(`  ${bold}${yellow}Framework${reset}`);
@@ -94,10 +94,10 @@ export default function help({ userRoot }: TyrContext) {
             console.log('');
         }
 
-        // Comandos de usuario en ~/.tyr/commands/
+        // User commands in ~/.tyr/commands/
         if (!fs.existsSync(commandsDir)) {
             console.log(separator);
-            console.log(`  ${yellow}No se encontró la carpeta de comandos: ${commandsDir}${reset}`);
+            console.log(`  ${yellow}Commands folder not found: ${commandsDir}${reset}`);
             console.log('');
             return;
         }
@@ -108,14 +108,14 @@ export default function help({ userRoot }: TyrContext) {
 
         if (files.length === 0) {
             console.log(separator);
-            console.log(`  ${dim}No hay comandos en ${commandsDir}${reset}`);
+            console.log(`  ${dim}No commands in ${commandsDir}${reset}`);
             console.log('');
             return;
         }
 
         console.log(separator);
         console.log('');
-        console.log(`  ${bold}${yellow}Comandos de usuario${reset}  ${gray}(~/.tyr/commands/)${reset}`);
+        console.log(`  ${bold}${yellow}User commands${reset}  ${gray}(~/.tyr/commands/)${reset}`);
         console.log('');
 
         for (const file of files) {
@@ -128,12 +128,12 @@ export default function help({ userRoot }: TyrContext) {
                     console.log(`  ${dim}${line}${reset}`);
                 }
             } else {
-                console.log(`  ${gray}Sin descripción${reset}`);
+                console.log(`  ${gray}No description${reset}`);
             }
 
             if (doc.usage) {
                 console.log('');
-                console.log(`  ${gray}  Uso:${reset}`);
+                console.log(`  ${gray}  Usage:${reset}`);
                 for (const line of doc.usage.split('\n')) {
                     console.log(`  ${cyan}    ${line}${reset}`);
                 }
@@ -143,7 +143,7 @@ export default function help({ userRoot }: TyrContext) {
         }
 
         console.log(separator);
-        console.log(`  ${dim}Genera un comando nuevo con ${cyan}tyr gen <nombre> "<qué debe hacer>"${reset}`);
+        console.log(`  ${dim}Generate a new command with ${cyan}tyr gen <name> "<what it should do>"${reset}`);
         console.log('');
     };
 }

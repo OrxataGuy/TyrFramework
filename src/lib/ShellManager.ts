@@ -123,7 +123,7 @@ export class ShellManager {
      * @param {boolean} defaultValue - Default answer if user presses Enter (default: false).
      * @returns {Promise<boolean>} True if the user confirmed.
      * @example
-     * const ok = await shell.confirm('¿Continuar?', false);
+     * const ok = await shell.confirm('Continue?', false);
      */
     public async confirm(question: string, defaultValue: boolean = false): Promise<boolean> {
         try {
@@ -135,7 +135,7 @@ export class ShellManager {
             }]);
             return result.value;
         } catch (e) {
-            throw new TyrError(`Error al mostrar la confirmación: ${question}`, e);
+            throw new TyrError(`Error showing confirmation: ${question}`, e);
         }
     }
 
@@ -146,7 +146,7 @@ export class ShellManager {
      * @param {string} question - The question to display.
      * @returns {Promise<string>} The selected value.
      * @example
-     * const branch = await shell.select([{ name: 'main', value: 'main' }], '¿Qué rama?');
+     * const branch = await shell.select([{ name: 'main', value: 'main' }], 'Which branch?');
      */
     public async select(choices: { name: string; value: string }[], question: string): Promise<string> {
         try {
@@ -158,7 +158,7 @@ export class ShellManager {
             }]);
             return result.value;
         } catch (e) {
-            throw new TyrError(`Error al mostrar la selección: ${question}`, e);
+            throw new TyrError(`Error showing selection: ${question}`, e);
         }
     }
 
@@ -169,7 +169,7 @@ export class ShellManager {
      * @param {string} question - The question to display.
      * @returns {Promise<string[]>} The selected values.
      * @example
-     * const widgets = await shell.checkbox(choices, '¿Qué widgets incluir?');
+     * const widgets = await shell.checkbox(choices, 'Which widgets to include?');
      */
     public async checkbox(choices: { name: string; value: string }[], question: string): Promise<string[]> {
         try {
@@ -181,7 +181,7 @@ export class ShellManager {
             }]);
             return result.value;
         } catch (e) {
-            throw new TyrError(`Error al mostrar las opciones: ${question}`, e);
+            throw new TyrError(`Error showing options: ${question}`, e);
         }
     }
 }
@@ -195,7 +195,7 @@ export const ShellManagerTests = {
     cd: { path: '/tmp' },
     input: { question: 'Enter a test value:' },
     showLoader: { message: 'Loading test...' },
-    confirm: { question: '¿Continuar?', defaultValue: false },
-    select: { choices: [{ name: 'Opción A', value: 'a' }, { name: 'Opción B', value: 'b' }], question: '¿Cuál eliges?' },
-    checkbox: { choices: [{ name: 'Item 1', value: '1' }, { name: 'Item 2', value: '2' }], question: '¿Cuáles quieres?' },
+    confirm: { question: 'Continue?', defaultValue: false },
+    select: { choices: [{ name: 'Option A', value: 'a' }, { name: 'Option B', value: 'b' }], question: 'Which one?' },
+    checkbox: { choices: [{ name: 'Item 1', value: '1' }, { name: 'Item 2', value: '2' }], question: 'Which ones?' },
 };

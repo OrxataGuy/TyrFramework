@@ -74,16 +74,16 @@ export class GitManager {
      * await git.cloneTo('git@github.com:org/repo.git', '/path/to/dest');
      */
     public async cloneTo(repoUrl: string, destDir: string): Promise<void> {
-        this.logger.info(`Clonando ${repoUrl}...`);
-        const loader = this.shell.showLoader('Clonando repositorio...');
+        this.logger.info(`Cloning ${repoUrl}...`);
+        const loader = this.shell.showLoader('Cloning repository...');
         try {
             await this.shell.exec(`git clone "${repoUrl}" "${destDir}"`);
             await this.shell.exec(`git -C "${destDir}" config --add core.filemode false`);
             loader.stop();
-            this.logger.success('Clonación completada.');
+            this.logger.success('Cloning complete.');
         } catch (e) {
             loader.stop();
-            throw new TyrError(`No se pudo clonar el repositorio: ${repoUrl}`, e, 'Comprueba que el repositorio existe y que tienes permisos para clonarlo.');
+            throw new TyrError(`Could not clone repository: ${repoUrl}`, e, 'Check that the repository exists and that you have permission to clone it.');
         }
     }
 
@@ -118,9 +118,9 @@ export class GitManager {
             await this.shell.exec(
                 `cd "${dir}" && rm -rf .git && git init -b master && git remote add origin "${remoteUrl}" && git config --add core.filemode false && echo 'node_modules' >> .gitignore`
             );
-            this.logger.success(`Repositorio Git inicializado en ${dir}`);
+            this.logger.success(`Git repository initialized at ${dir}`);
         } catch (e) {
-            throw new TyrError(`No se pudo inicializar el repositorio en ${dir}`, e);
+            throw new TyrError(`Could not initialize git repository at ${dir}`, e);
         }
     }
 }

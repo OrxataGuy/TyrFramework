@@ -3,7 +3,7 @@ import sql, { config as SQLConfig } from 'mssql';
 
 /**
  * @class SQLManager
- * @description Conector con la base de datos SQL Server.
+ * @description SQL Server database connector.
  */
 export class SQLManager {
   private pool!: sql.ConnectionPool;
@@ -33,12 +33,12 @@ export class SQLManager {
 
   /**
    * @method select
-   * @description Ejecuta un comando SELECT en SQL Server y devuelve el resultado como JSON.
-   * @param {string} query - El comando SELECT completo.
-   * @returns {Promise<any[]>} Los registros del resultado.
+   * @description Executes a SELECT command on SQL Server and returns the result as JSON.
+   * @param {string} query - The full SELECT command.
+   * @returns {Promise<any[]>} The result records.
    * @example
    * await dbManager.init();
-   * const data = await dbManager.select('SELECT * FROM tabla');
+   * const data = await dbManager.select('SELECT * FROM table');
    */
   public async select(query: string): Promise<any[]> {
     await this.init();
@@ -51,9 +51,9 @@ export class SQLManager {
 
   /**
    * @method searchBrokerOnDB
-   * @description Busca broker por hostname usando la query encoded.
-   * @param {string | URL} url - URL o string para extraer hostname.
-   * @returns {Promise<string>} Nombre del broker.
+   * @description Looks up a broker by hostname using the encoded query.
+   * @param {string | URL} url - URL or string to extract the hostname from.
+   * @returns {Promise<string>} Broker name.
    * @example
    * const broker = await db.searchBrokerOnDB('https://www.foo.com');
    */
@@ -88,7 +88,7 @@ export class SQLManager {
     await this.close();
 
     if (!result.recordset[0] || !result.recordset[0].BROKER) {
-      throw new Error(`No se encontró broker para ${urlObj}`);
+      throw new Error(`No broker found for ${urlObj}`);
     }
 
     return result.recordset[0].BROKER as string;
@@ -104,7 +104,7 @@ export class SQLManager {
 
 /**
  * @object SQLManagerTests
- * @description Parámetros de pruebas para validar la funcionalidad de SQLManager.
+ * @description Test parameters to validate SQLManager functionality.
  */
 export const SQLManagerTests = {
     // init: {},

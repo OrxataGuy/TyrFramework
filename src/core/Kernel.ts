@@ -104,14 +104,14 @@ export class Kernel {
             const shell = this.container.get().shell;
             const gitDir = path.join(this.userRoot, '.git');
             if (!fs.existsSync(gitDir)) {
-                console.log('~/.tyr no está vinculado a ningún repositorio git.');
-                console.log('Ejecuta: tyr --config --repo <url>  para vincularlo.');
+                console.log('~/.tyr is not linked to any git repository.');
+                console.log('Run: tyr --config --repo <url>  to link it.');
                 return;
             }
-            console.log('Actualizando ~/.tyr desde el repositorio...');
+            console.log('Updating ~/.tyr from repository...');
             shell.cd(this.userRoot);
             await shell.exec('git pull');
-            console.log('Actualización completada.');
+            console.log('Update complete.');
             return;
         }
 
@@ -120,13 +120,13 @@ export class Kernel {
             const pkgPath = path.resolve(this.frameworkRoot, 'package.json');
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
             const shell = this.container.get().shell;
-            console.log(`Actualizando ${pkg.name}...`);
+            console.log(`Updating ${pkg.name}...`);
             await shell.exec(`npm update -g ${pkg.name}`);
-            console.log('Actualización completada. Ejecuta tyr --version para confirmar.');
+            console.log('Update complete. Run tyr --version to confirm.');
             return;
         }
 
-        // --help / -h: lista todos los comandos disponibles con su documentación
+        // --help / -h: lists all available commands with their documentation
         if (commandName === '--help' || commandName === '-h') {
             const helpContext = {
                 ...this.container.get(),

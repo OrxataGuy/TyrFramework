@@ -17,14 +17,14 @@ interface DocStructure {
 
 export default function doc({ logger, frameworkRoot, run }: TyrContext) {
     return async (args: string[]) => {
-        logger.info("📚 Generando documentación del sistema (TS Mode)...");
+        logger.info("📚 Generating system documentation (TS Mode)...");
 
         const libPath = path.resolve(frameworkRoot, 'src/lib');
 
         const parseJSDoc = (filename: string, content: string): DocStructure => {
             const fileDoc: DocStructure = {
                 name: filename,
-                description: "Sin descripción.",
+                description: "No description.",
                 methods: []
             };
 
@@ -81,7 +81,7 @@ export default function doc({ logger, frameworkRoot, run }: TyrContext) {
                         description = descMatch[1].trim();
                     } else {
                         const textLines = cleanComment.split('\n').filter(l => !l.startsWith('@'));
-                        description = textLines.join(' ').trim() || "Sin descripción";
+                        description = textLines.join(' ').trim() || "No description";
                     }
 
                     let example = null;
@@ -104,14 +104,14 @@ export default function doc({ logger, frameworkRoot, run }: TyrContext) {
         };
 
         if (!fs.existsSync(libPath)) {
-            logger.error(`No se encuentra la carpeta de librerías: ${libPath}`);
+            logger.error(`Library folder not found: ${libPath}`);
             return;
         }
 
         const files = fs.readdirSync(libPath).filter(f => f.endsWith('.ts'));
 
         if (files.length === 0) {
-            logger.warn("No se encontraron archivos .ts en /src/lib para documentar.");
+            logger.warn("No .ts files found in /src/lib to document.");
         }
 
         const fileDocs = files.map(file => {
@@ -120,44 +120,44 @@ export default function doc({ logger, frameworkRoot, run }: TyrContext) {
 
         const systemDocs: DocStructure = {
             name: 'TyrContext (Kernel)',
-            description: 'Utilidades globales inyectadas en cada comando. Accesibles destructurando el contexto.',
+            description: 'Global utilities injected into every command. Accessible by destructuring the context.',
             methods: [
                 {
                     name: 'run',
-                    description: 'Ejecuta otro comando del sistema programáticamente (Composición de comandos). Útil para que un comando invoque a otros.',
+                    description: 'Programmatically runs another system command (command composition). Useful for a command to invoke others.',
                     example: `
-// Llama al comando 'test' pasándole argumentos adicionales
+// Calls the 'test' command passing extra arguments
 const secret = "123";
 args.push(secret);
 await run('test', args);`.trim()
                 },
                 {
                     name: 'task',
-                    description: 'Helper que envuelve una operación crítica. Si falla, el framework captura el error, añade contexto y lo muestra limpio en consola. Elimina la necesidad de try/catch manuales.',
+                    description: 'Helper that wraps a critical operation. If it fails, the framework captures the error, adds context, and displays it cleanly in the console. Removes the need for manual try/catch.',
                     example: `
-// Ejemplo: Tarea asíncrona que retorna un valor
-const buildId = await task('Compilando proyecto', async () => {
+// Example: async task that returns a value
+const buildId = await task('Building project', async () => {
     return await shell.exec('npm run build');
 });
 
-// Si falla, el log dirá: "Falló la tarea: Compilando proyecto"`.trim()
+// If it fails, the log will say: "Task failed: Building project"`.trim()
                 },
                 {
                     name: 'fail',
-                    description: 'Detiene la ejecución del comando inmediatamente lanzando un error controlado. Permite añadir una "sugerencia" para ayudar al usuario a solucionarlo.',
+                    description: 'Stops command execution immediately by throwing a controlled error. Allows adding a "suggestion" to help the user resolve the issue.',
                     example: `
-// Úsalo para validaciones lógicas
+// Use it for logic validations
 if (!fs.existsSync('./package.json')) {
     fail(
-        'No se encuentra el archivo package de npm', 
-        'Ejecuta "npm init -y" para generar uno.'
+        'npm package file not found',
+        'Run "npm init -y" to generate one.'
     );
 }`.trim()
                 },
                 {
                     name: 'logger',
-                    description: 'Sistema de logs estandarizado con colores y formatos.',
-                    example: `logger.info('Iniciando...');\nlogger.success('Creado');\nlogger.warn('Cuidado');`
+                    description: 'Standardised logging system with colours and formats.',
+                    example: `logger.info('Starting...');\nlogger.success('Created');\nlogger.warn('Warning');`
                 }
             ]
         };
@@ -192,7 +192,7 @@ if (!fs.existsSync('./package.json')) {
         </head>
         <body>
             <nav>
-                <h3 style="color: #888; text-transform: uppercase; font-size: 0.8rem;">Módulos TS</h3>
+                <h3 style="color: #888; text-transform: uppercase; font-size: 0.8rem;">TS Modules</h3>
                 ${docs.map(d => `<a href="#${d.name}">📦 ${d.name.replace('.ts', '')}</a>`).join('')}
             </nav>
             <main>
@@ -223,17 +223,17 @@ if (!fs.existsSync('./package.json')) {
                         const { name, prompt } = JSON.parse(body);
                         if (!name || !prompt) {
                             res.writeHead(400, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({ success: false, message: 'Faltan campos obligatorios.' }));
+                            res.end(JSON.stringify({ success: false, message: 'Missing required fields.' }));
                             return;
                         }
 
                         await run('ai', [name, prompt]);
 
                         res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: true, message: `Comando '${name}' generado correctamente en ~/.tyr/commands/${name}.tyr.ts` }));
+                        res.end(JSON.stringify({ success: true, message: `Command '${name}' generated successfully at ~/.tyr/commands/${name}.tyr.ts` }));
                     } catch (e: any) {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: false, message: e.message || 'Error al generar el comando.' }));
+                        res.end(JSON.stringify({ success: false, message: e.message || 'Error generating command.' }));
                     }
                 });
                 return;
@@ -244,8 +244,8 @@ if (!fs.existsSync('./package.json')) {
         });
 
         server.listen(PORT, () => {
-            logger.success(`Documentación TS lista en: http://localhost:${PORT}`);
-            logger.info("Presiona Ctrl+C para detener.");
+            logger.success(`TS documentation ready at: http://localhost:${PORT}`);
+            logger.info("Press Ctrl+C to stop.");
         });
     };
 };

@@ -11,12 +11,12 @@ const template = `import type { TyrContext } from '@orxataguy/tyr';
 
 export default ({ run, task, fail, logger, shell, fs }: TyrContext) => {
     return async (args: string[]) => {
-        logger.info("Ejecutando comando: %s");
+        logger.info("Running command: %s");
 
-        // Tu lógica aquí...
-        // Ejecuta "tyr doc" para ver la documentación de managers disponibles
+        // Your logic here...
+        // Run "tyr doc" to see the documentation for available managers
 
-        logger.success("¡Comando %s finalizado!");
+        logger.success("Command %s finished!");
     };
 };
 
@@ -29,18 +29,18 @@ export default function gen({ logger, fs, userRoot }: TyrContext) {
         const fileName = args[1];
 
         if (!commandName || !fileName) {
-            logger.error('Uso incorrecto.');
-            logger.info('Sintaxis: tyr gen [nombre-comando] [nombre-archivo]');
+            logger.error('Incorrect usage.');
+            logger.info('Syntax: tyr gen [command-name] [file-name]');
             return;
         }
 
-        logger.info(`Creando nuevo comando: '${commandName}' -> '${fileName}.tyr.ts'`);
+        logger.info(`Creating new command: '${commandName}' -> '${fileName}.tyr.ts'`);
 
         const commandsDir = path.join(userRoot, 'commands');
         const filePath = path.join(commandsDir, `${fileName}.tyr.ts`);
 
         if (fs.exists(filePath)) {
-            logger.error(`El archivo ${fileName}.tyr.ts ya existe. Abortando.`);
+            logger.error(`File ${fileName}.tyr.ts already exists. Aborting.`);
             return;
         }
 
@@ -56,7 +56,7 @@ export default function gen({ logger, fs, userRoot }: TyrContext) {
             if (!config.commands) config.commands = {};
 
             if (config.commands[commandName]) {
-                logger.warn(`El comando '${commandName}' ya existía. Actualizando ruta...`);
+                logger.warn(`Command '${commandName}' already existed. Updating path...`);
             }
 
             // Store path relative to userRoot so it remains portable
@@ -65,10 +65,10 @@ export default function gen({ logger, fs, userRoot }: TyrContext) {
             const newYaml = yaml.dump(config, { indent: 2, lineWidth: -1 });
             await fs.write(mapPath, newYaml);
 
-            logger.success(`Comando '${commandName}' creado en ${filePath}`);
-            logger.success(`Registrado en ${mapPath}`);
+            logger.success(`Command '${commandName}' created at ${filePath}`);
+            logger.success(`Registered in ${mapPath}`);
         } catch (e) {
-            logger.error('Error al actualizar la configuración.');
+            logger.error('Error updating configuration.');
             console.error(e);
         }
     };

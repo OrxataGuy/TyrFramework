@@ -74,18 +74,18 @@ export class JiraManager {
                         name: `${i.key} - ${i.summary} [${i.status}]`,
                         value: i.key,
                     })),
-                    { name: 'Sin ticket (introducir rama manualmente)', value: '__manual__' },
-                    { name: 'Omitir (no crear rama)', value: '__skip__' },
+                    { name: 'No ticket (enter branch manually)', value: '__manual__' },
+                    { name: 'Skip (do not create branch)', value: '__skip__' },
                 ];
 
-                const selected = await this.shell.select(choices, 'Selecciona un ticket de Jira:');
+                const selected = await this.shell.select(choices, 'Select a Jira ticket:');
 
                 if (selected === '__skip__') return null;
                 if (selected === '__manual__') return this.askForBranch();
 
                 return selected;
             } catch {
-                this.logger.warn('No se ha podido conectar con Jira. Introducción manual de rama.');
+                this.logger.warn('Could not connect to Jira. Manual branch entry.');
             }
         }
 
@@ -93,7 +93,7 @@ export class JiraManager {
     }
 
     private async askForBranch(): Promise<string | null> {
-        const raw = await this.shell.input('Introduce el nombre de la nueva rama (vacío para omitir):');
+        const raw = await this.shell.input('Enter the new branch name (empty to skip):');
         if (!raw.trim()) return null;
         // Normalise: take the last segment separated by '/'
         return raw.trim().split('/').pop()?.toUpperCase() ?? raw.trim();

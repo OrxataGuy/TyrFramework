@@ -8,7 +8,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const packageRoot = resolve(__dirname, '..');
 
-// Locate tsx's CLI entry directly from its package.json — no shell, no .cmd wrappers
 const tsxPkg = JSON.parse(readFileSync(join(packageRoot, 'node_modules', 'tsx', 'package.json'), 'utf-8'));
 const tsxBinField = tsxPkg.bin;
 const tsxBinRelative = typeof tsxBinField === 'string' ? tsxBinField : (tsxBinField.tsx ?? tsxBinField['tsx']);

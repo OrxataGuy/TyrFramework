@@ -122,8 +122,7 @@ export class Kernel {
             const shell = this.container.get().shell;
             console.log(`Updating ${pkg.name}...`);
             await shell.exec(`npm update -g ${pkg.name}`);
-            console.log(`Current version:`)
-            await shell.exec(`tyr --version`)
+            console.log(`Current version:`, `tyr v${pkg.version}`)
             return;
         }
 

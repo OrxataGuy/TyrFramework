@@ -47,7 +47,6 @@ export default function gen({ logger, fs, userRoot }: TyrContext) {
         const templateFilled = template.replaceAll('%s', commandName);
         await fs.write(filePath, templateFilled.trim());
 
-        // Register in ~/.tyr/map.yml
         const mapPath = path.join(userRoot, 'map.yml');
         try {
             const currentConfigRaw = await fs.read(mapPath);
@@ -59,7 +58,6 @@ export default function gen({ logger, fs, userRoot }: TyrContext) {
                 logger.warn(`Command '${commandName}' already existed. Updating path...`);
             }
 
-            // Store path relative to userRoot so it remains portable
             config.commands[commandName] = `./commands/${fileName}.tyr.ts`;
 
             const newYaml = yaml.dump(config, { indent: 2, lineWidth: -1 });

@@ -8,10 +8,6 @@ interface CommandDoc {
     usage: string;
 }
 
-/**
- * Extracts the first JSDoc block from a .tyr.ts file and parses it
- * into a description and usage examples.
- */
 function parseCommandDoc(filePath: string): CommandDoc {
     const fileName = path.basename(filePath, '.tyr.ts');
     const content = fs.readFileSync(filePath, 'utf-8');
@@ -21,12 +17,10 @@ function parseCommandDoc(filePath: string): CommandDoc {
         return { name: fileName, description: '', usage: '' };
     }
 
-    // Clean each line: remove leading * and spaces
     const lines = match[1]
         .split('\n')
         .map(line => line.replace(/^\s*\*\s?/, '').trimEnd());
 
-    // Split into description and "Usage:" block
     const usoIndex = lines.findIndex(l => /^uso:/i.test(l.trim()));
 
     let description = '';
@@ -74,7 +68,6 @@ export default function help({ userRoot }: TyrContext) {
         console.log(separator);
         console.log('');
 
-        // Framework flags and built-in commands
         const builtins = [
             { name: '--help',    description: 'Shows this command listing.',                  usage: 'tyr --help' },
             { name: '--version', description: 'Shows the installed version of tyr.',          usage: 'tyr --version' },

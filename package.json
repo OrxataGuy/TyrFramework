@@ -1,6 +1,6 @@
 {
   "name": "@orxataguy/tyr",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "type": "module",
   "bin": {
     "tyr": "./bin/tyr.js"

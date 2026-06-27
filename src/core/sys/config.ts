@@ -76,13 +76,13 @@ async function checkWindowsExecutionPolicy(shell: any, logger: any): Promise<voi
         const policy = String(output).trim();
 
         if (policy === 'Restricted' || policy === 'AllSigned' || policy === 'Undefined') {
-            logger.warn(`\nExecution Policy actual: ${policy || 'Undefined'}`);
-            logger.warn('Con esta política, PowerShell puede bloquear la carga de tu perfil (y por tanto las funciones/alias de Tyr).');
-            logger.info('Para permitirlo, ejecuta en una consola de PowerShell:');
+            logger.warn(`\nCurrent Execution Policy: ${policy || 'Undefined'}`);
+            logger.warn('With this policy, PowerShell may block loading your profile (and therefore Tyr functions/aliases).');
+            logger.info('To allow it, run in a PowerShell console:');
             logger.info('  Set-ExecutionPolicy RemoteSigned -Scope CurrentUser');
         }
     } catch {
-        logger.warn('No se pudo comprobar la Execution Policy de PowerShell. Verifícala manualmente si los comandos no cargan.');
+        logger.warn('Could not check PowerShell Execution Policy. Verify it manually if commands do not load.');
     }
 }
 
@@ -176,15 +176,15 @@ async function configureUnixShell(tyrFs: any, logger: any, homeDir: string, alia
     }
     await tyrFs.ensureLine(rcFile, `source "${aliasesPath}"`);
     await tyrFs.ensureLine(rcFile, `source "${pluginsPath}"`);
-    logger.success(`Shell configurado: ${rcFile}`);
-    logger.info(`Ejecuta: source ${rcFile}  (o abre una nueva terminal)`);
+    logger.success(`Shell configured: ${rcFile}`);
+    logger.info(`Run: source ${rcFile}  (or open a new terminal)`);
 }
 
 async function configureWindowsShell(tyrFs: any, logger: any, shell: any, aliasesPath: string, pluginsPath: string): Promise<void> {
     const profiles = getWindowsProfilePaths();
 
     if (profiles.length === 0) {
-        logger.warn('Could not detect PowerShell profile (USERPROFILE no está definido).');
+        logger.warn('Could not detect PowerShell profile (USERPROFILE is not defined).');
         logger.info(`Add manually:\n  . "${aliasesPath}"\n  . "${pluginsPath}"`);
         return;
     }
@@ -197,7 +197,7 @@ async function configureWindowsShell(tyrFs: any, logger: any, shell: any, aliase
         logger.success(`PowerShell profile configured: ${psProfile}`);
     }
 
-    logger.info('Restart PowerShell (o abre una nueva consola) para aplicar los cambios.');
+    logger.info('Restart PowerShell (or open a new console) to apply the changes.');
 
     await checkWindowsExecutionPolicy(shell, logger);
 }
@@ -328,13 +328,13 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
 
         if (!tyrFs.exists(packageJsonPath)) {
             await tyrFs.write(packageJsonPath, PACKAGE_JSON_TEMPLATE);
-            logger.success(`Archivo creado: ${packageJsonPath}`);
+            logger.success(`File created: ${packageJsonPath}`);
             needsInstall = true;
         }
 
         if (!tyrFs.exists(tsconfigPath)) {
             await tyrFs.write(tsconfigPath, TSCONFIG_TEMPLATE);
-            logger.success(`Archivo creado: ${tsconfigPath}`);
+            logger.success(`File created: ${tsconfigPath}`);
             needsInstall = true;
         }
 
@@ -353,7 +353,7 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
         const pluginsPath = path.join(userRoot, `plugins${ext}`);
 
         if (tyrFs.exists(aliasesPath) || tyrFs.exists(pluginsPath)) {
-            logger.info('\nConfigurando shell...');
+            logger.info('\nConfiguring shell...');
             if (isWindows) {
                 await configureWindowsShell(tyrFs, logger, shell, aliasesPath, pluginsPath);
             } else {

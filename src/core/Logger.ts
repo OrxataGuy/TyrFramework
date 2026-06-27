@@ -4,7 +4,7 @@ import path from 'path';
 import { homedir } from 'os';
 
 export interface Logger {
-    line(dashed: boolean): void;
+    line(opts: any): void;
     log(msg: any): void;
     info(msg: any): void;
     success(msg: any): void;
@@ -28,9 +28,16 @@ export function createLogger(isDebug: boolean): Logger {
     };
 
     return {
-        line: (dashed) => {
-            if (dashed) {
-                console.log('══════════════════════════════════════════════');
+        line: (opts) => {
+            if (opts) {
+                let {char, title, count} = opts;
+                if (!count) count = 45;
+                let content = '';
+                if (title) content = `${char} ${title} ${char}`;
+                else {
+                    for (let i = 0; i < count; i++) content += char;
+                }
+                console.log(content);
             } else {
                 console.log('');
             }

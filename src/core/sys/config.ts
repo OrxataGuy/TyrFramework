@@ -322,8 +322,6 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
             }
         }
 
-        // Garantizar package.json + tsconfig.json + npm install siempre,
-        // tanto en init fresh como al clonar un repo existente.
         const packageJsonPath = path.join(userRoot, 'package.json');
         const tsconfigPath    = path.join(userRoot, 'tsconfig.json');
         let needsInstall = false;

@@ -75,7 +75,7 @@ const TSCONFIG_TEMPLATE = `{
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "strict": true,
     "allowSyntheticDefaultImports": true,
@@ -86,8 +86,7 @@ const TSCONFIG_TEMPLATE = `{
 }
 `;
 
-const ENV_TEMPLATE = `# ~/.tyr/.env
-# Environment variables for Tyr. This file must never be committed to git.
+const ENV_TEMPLATE = `# Environment variables for Tyr. This file must never be committed to git.
 #
 # SQL Server database
 MSSQL_USER=
@@ -99,8 +98,7 @@ MONGO_URI=
 MONGO_DATABASE=
 `;
 
-const SH_ALIASES_TEMPLATE = `# ~/.tyr/aliases
-# Add your custom aliases here.
+const SH_ALIASES_TEMPLATE = `# Add your custom aliases here.
 # This file is loaded automatically by your shell.
 #
 # Examples:
@@ -108,28 +106,32 @@ const SH_ALIASES_TEMPLATE = `# ~/.tyr/aliases
 #   alias tyr-deploy='tyr deploy'
 `;
 
-const SH_PLUGINS_TEMPLATE = `# ~/.tyr/plugins
-# Add your shell plugins here.
+const SH_PLUGINS_TEMPLATE = `# Add your shell plugins here.
 # Compatible with zsh, bash and other POSIX shells.
 #
 # Examples (zsh):
 #   source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 `;
 
-const PS_ALIASES_TEMPLATE = `# ~/.tyr/aliases.ps1
-# Add your custom aliases for PowerShell here.
+const PS_ALIASES_TEMPLATE = `# Add your custom aliases for PowerShell here.
 #
 # Examples:
 #   Set-Alias gs git-status
 #   function tyr-deploy { tyr deploy @args }
 `;
 
-const PS_PLUGINS_TEMPLATE = `# ~/.tyr/plugins.ps1
-# Add your PowerShell modules and plugins here.
+const PS_PLUGINS_TEMPLATE = `# Add your PowerShell modules and plugins here.
 #
 # Examples:
 #   Import-Module posh-git
 #   Import-Module PSReadLine
+`;
+
+const GIT_IGNORE = `# ENVIRONMENT
+.env
+
+# NODE 
+node_modules
 `;
 
 function makeTimestamp(): string {
@@ -239,10 +241,16 @@ export default function config({ logger, fs: tyrFs, frameworkRoot, shell }: TyrC
             await tyrFs.write(mapPath, 'commands: {}\n');
             logger.success(`File created: ${mapPath}`);
 
-            const envPath = path.join(userRoot, '.env');
+            const envPath = path.join(userRoot, '.env.example');
             if (!tyrFs.exists(envPath)) {
                 await tyrFs.write(envPath, ENV_TEMPLATE);
                 logger.success(`File created: ${envPath}`);
+            }
+            
+            const gitignorePath = path.join(userRoot, '.gitignore');
+            if (!tyrFs.exists(gitignorePath)) {
+                await tyrFs.write(gitignorePath, GIT_IGNORE);
+                logger.success(`File created: ${gitignorePath}`);
             }
 
             const packageJsonPath = path.join(userRoot, 'package.json');

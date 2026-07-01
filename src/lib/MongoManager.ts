@@ -1,4 +1,5 @@
 import { MongoClient, Db, Document, Filter, UpdateFilter, InsertOneResult, InsertManyResult, UpdateResult, DeleteResult, WithId, OptionalUnlessRequiredId, FindOptions } from 'mongodb';
+import { getEnvString } from '../core/util/getenv.js';
 
 /**
  * @class MongoManager
@@ -13,8 +14,8 @@ export class MongoManager {
 
   private async init(): Promise<void> {
     if (!this.connected) {
-      const uri = process.env.MONGO_URI || 'mongodb://localhost:27017';
-      const dbName = process.env.MONGO_DATABASE || '';
+      const uri = getEnvString('MONGO_URI') || 'mongodb://localhost:27017';
+      const dbName = getEnvString('MONGO_DATABASE') || '';
 
       this.client = new MongoClient(uri);
       await this.client.connect();

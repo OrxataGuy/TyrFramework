@@ -12,6 +12,10 @@ import { GitManager } from '../src/lib/GitManager.js';
 import { SystemManager } from '../src/lib/SystemManager.js';
 import { SQLManager } from '../src/lib/SQLManager.js';
 import { WebManager } from '../src/lib/WebManager.js';
+import { AIVendorManager } from '../src/lib/AIVendorManager.js';
+import { AIContextManager } from '../src/lib/AIContextManager.js';
+import { PromptTemplateManager } from '../src/lib/PromptTemplateManager.js';
+import { TokenManager } from '../src/lib/TokenManager.js';
 import { createLogger } from '../src/core/Logger.js';
 import { TyrContext } from '../src/core/Kernel.js';
 
@@ -23,6 +27,9 @@ import { SQLManagerTests } from '../src/lib/SQLManager.js';
 import { SystemManagerTests } from '../src/lib/SystemManager.js';
 import { WebManagerTests } from '../src/lib/WebManager.js';
 import { ShellManagerTests } from '../src/lib/ShellManager.js';
+import { AIContextManagerTests } from '../src/lib/AIContextManager.js';
+import { PromptTemplateManagerTests } from '../src/lib/PromptTemplateManager.js';
+import { TokenManagerTests } from '../src/lib/TokenManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,16 +61,22 @@ async function testManagers(): Promise<void> {
     console.log('\n── Managers ─────────────────────────────────────────────\n');
 
     const shell = new ShellManager();
+    const fs = new FileSystemManager(logger);
+    const aiVendor = new AIVendorManager(logger);
+    const aiContext = new AIContextManager(fs, shell, aiVendor, logger);
 
     const managers = [
-        { name: 'ShellManager',      instance: new ShellManager(),               tests: ShellManagerTests },
-        { name: 'FileSystemManager', instance: new FileSystemManager(logger),     tests: FileSystemManagerTests },
-        { name: 'DockerManager',     instance: new DockerManager(shell, logger),  tests: DockerManagerTests },
-        { name: 'GitManager',        instance: new GitManager(shell, logger),     tests: GitManagerTests },
-        { name: 'PackageManager',    instance: new PackageManager(shell, logger), tests: PackageManagerTests },
-        { name: 'SQLManager',        instance: new SQLManager(),                  tests: SQLManagerTests },
-        { name: 'SystemManager',     instance: new SystemManager(shell, logger),  tests: SystemManagerTests },
-        { name: 'WebManager',        instance: new WebManager(logger),            tests: WebManagerTests },
+        { name: 'ShellManager',           instance: new ShellManager(),                        tests: ShellManagerTests },
+        { name: 'FileSystemManager',      instance: fs,                                        tests: FileSystemManagerTests },
+        { name: 'DockerManager',          instance: new DockerManager(shell, logger),          tests: DockerManagerTests },
+        { name: 'GitManager',             instance: new GitManager(shell, logger),              tests: GitManagerTests },
+        { name: 'PackageManager',         instance: new PackageManager(shell, logger),         tests: PackageManagerTests },
+        { name: 'SQLManager',             instance: new SQLManager(),                          tests: SQLManagerTests },
+        { name: 'SystemManager',          instance: new SystemManager(shell, logger),          tests: SystemManagerTests },
+        { name: 'WebManager',             instance: new WebManager(logger),                    tests: WebManagerTests },
+        { name: 'AIContextManager',       instance: aiContext,                                 tests: AIContextManagerTests },
+        { name: 'PromptTemplateManager',  instance: new PromptTemplateManager(aiContext, logger), tests: PromptTemplateManagerTests },
+        { name: 'TokenManager',           instance: new TokenManager(logger),                  tests: TokenManagerTests },
     ];
 
     for (const { name, instance, tests } of managers) {

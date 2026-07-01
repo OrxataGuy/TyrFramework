@@ -10,6 +10,10 @@ import { WebManager } from '../lib/WebManager.js';
 import { WorkspaceManager } from '../lib/WorkspaceManager.js';
 import { JiraManager } from '../lib/JiraManager.js';
 import { SetupManager } from '../lib/SetupManager.js';
+import { AIVendorManager } from '../lib/AIVendorManager.js';
+import { AIContextManager } from '../lib/AIContextManager.js';
+import { PromptTemplateManager } from '../lib/PromptTemplateManager.js';
+import { TokenManager } from '../lib/TokenManager.js';
 import { Logger, createLogger } from './Logger.js';
 
 import path from 'path';
@@ -31,6 +35,10 @@ export interface ServiceContainer {
     workspace: WorkspaceManager;
     jira: JiraManager;
     setup: SetupManager;
+    aiVendor: AIVendorManager;
+    aiContext: AIContextManager;
+    prompts: PromptTemplateManager;
+    tokens: TokenManager;
 }
 
 export class Container {
@@ -47,6 +55,8 @@ export class Container {
         const mongo = new MongoManager();
         const web = new WebManager(logger);
         const fs = new FileSystemManager(logger);
+        const aiVendor = new AIVendorManager(logger);
+        const aiContext = new AIContextManager(fs, aiVendor, logger);
 
         this.services = {
             logger,
@@ -63,6 +73,10 @@ export class Container {
             workspace: new WorkspaceManager(shell, fs, logger),
             jira: new JiraManager(web, shell, logger),
             setup: new SetupManager(shell, fs, logger),
+            aiVendor,
+            aiContext,
+            prompts: new PromptTemplateManager(aiContext, logger),
+            tokens: new TokenManager(logger),
         };
     }
 

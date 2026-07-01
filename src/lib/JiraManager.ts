@@ -2,6 +2,9 @@ import { WebManager } from './WebManager.js';
 import { ShellManager } from './ShellManager.js';
 import { Logger } from '../core/Logger.js';
 
+import {getEnvString} from '../core/util/getenv.js';
+
+
 interface JiraIssue {
     key: string;
     summary: string;
@@ -29,11 +32,11 @@ export class JiraManager {
     }
 
     private get jiraUrl(): string | undefined {
-        return process.env.JIRA_URL;
+        return getEnvString('JIRA_URL');
     }
 
     private get jiraToken(): string | undefined {
-        return process.env.JIRA_TOKEN;
+        return getEnvString('JIRA_TOKEN');
     }
 
     private async fetchMyIssues(): Promise<JiraIssue[]> {

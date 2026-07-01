@@ -1,5 +1,6 @@
 import path from 'path';
 import sql, { config as SQLConfig } from 'mssql';
+import { getEnvString } from '../core/util/getenv.js';
 
 /**
  * @class SQLManager
@@ -16,10 +17,10 @@ export class SQLManager {
     if (!this.connected) {
 
       const db_config: SQLConfig = {
-        user: process.env.MSSQL_USER,
-        password: process.env.MSSQL_PASSWORD,
-        server: process.env.MSSQL_SERVER || '',
-        database: process.env.MSSQL_DATABASE,
+        user: getEnvString('MSSQL_USER'),
+        password: getEnvString('MSSQL_PASSWORD'),
+        server: getEnvString('MSSQL_SERVER') || '',
+        database: getEnvString('MSSQL_DATABASE'),
         options: {
           encrypt: false,
           trustServerCertificate: true

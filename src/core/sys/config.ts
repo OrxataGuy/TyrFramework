@@ -1,4 +1,5 @@
 import path from 'path';
+import { getEnvString } from '../util/getenv.js';
 import { homedir, platform } from 'os';
 import { existsSync, cpSync, rmSync, mkdirSync, readdirSync } from 'fs';
 import { execSync } from 'child_process';
@@ -48,7 +49,7 @@ function backupUserRoot(userRoot: string, backupPath: string): void {
 }
 
 function detectShellRcFile(homeDir: string): string | null {
-    const shell = process.env.SHELL || '';
+    const shell = getEnvString('SHELL', '');
     if (shell.includes('zsh'))  return path.join(homeDir, '.zshrc');
     if (shell.includes('fish')) return path.join(homeDir, '.config', 'fish', 'config.fish');
     if (shell.includes('bash')) {
@@ -60,7 +61,7 @@ function detectShellRcFile(homeDir: string): string | null {
 }
 
 function getWindowsProfilePaths(): string[] {
-    const userProfile = process.env.USERPROFILE;
+    const userProfile = getEnvString('USERPROFILE');
     if (!userProfile) return [];
     return [
         path.join(userProfile, 'Documents', 'WindowsPowerShell', 'Microsoft.PowerShell_profile.ps1'),
@@ -123,6 +124,14 @@ MSSQL_DATABASE=
 # MongoDB database
 MONGO_URI=
 MONGO_DATABASE=
+# AI vendor (anthropic | openai | gemini)
+AI_VENDOR=anthropic
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+AI_MODEL=
+AI_TEMPERATURE=
+AI_MAX_TOKENS=
 `;
 
 const SH_ALIASES_TEMPLATE = `# Add your custom aliases here.

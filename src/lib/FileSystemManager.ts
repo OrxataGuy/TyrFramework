@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, Dirent } from 'fs';
 import { homedir } from 'os';
 import path from 'path';
 
@@ -29,7 +29,7 @@ export class FileSystemManager {
      * @param {string} filePath - The path to expand.
      * @returns {string} The expanded absolute path.
      * @example
-     * const dir = fs.expandPath(process.env.INTEGRATIONS_DIR!);
+     * const dir = fs.expandPath(getEnvString('INTEGRATIONS_DIR'));
      * // "~/dev/datosBroker" → "/Users/mandreu/dev/datosBroker"
      */
     public expandPath(filePath: string): string {
@@ -73,6 +73,26 @@ export class FileSystemManager {
         } catch (e) {
             if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
             throw new TyrError(`Could not read file: ${filePath}`, e, 'Check that the file exists and has read permissions.');
+        }
+    }
+
+     /**
+     * @method readdir
+     * @description Reads the content of a directory. Returns null if the directory does not exist.
+     * @param {string} dirPath - Path to the directory.
+     * @returns {Promise<string[]|null>} List of entries or null if it does not exist.
+     * @example
+     * const entries = await fs.readdir('./src');
+     */
+    public async readdir(dirPath: string, options: { withFileTypes: true } & Record<string, any>): Promise<Dirent[]>;
+    public async readdir(dirPath: string, options?: ({ withFileTypes?: false } & Record<string, any>) | undefined): Promise<string[]>;
+    public async readdir(dirPath: string, options?: any): Promise<string[] | Dirent[]> {
+        const resolvedPath = this.resolvePath(dirPath);
+        try {
+            return await fs.readdir(resolvedPath, options);
+        } catch (e) {
+            if ((e as NodeJS.ErrnoException).code === 'ENOENT') return [];
+            throw new TyrError(`Could not read directory: ${dirPath}`, e, 'Check that the directory exists and has read permissions.');
         }
     }
 

@@ -23,6 +23,13 @@ const DEFAULT_TEMPLATES: Record<string, PromptTemplate> = {
             'JSDoc comments on public methods. Output only the TypeScript code for the file, no commentary.',
         user: 'Command name: {{name}}\nRequested behaviour:\n{{description}}',
     },
+    'generate-code': {
+        system:
+            'You are a senior engineer. Follow the ' +
+            'existing conventions exactly: KISS, SOLID, DRY. Only make simple comments on the functions to give context if is necessary ' +
+            'Output only the code for the file, no commentary.',
+        user: 'Command name: {{name}}\nRequested behaviour:\n{{description}}',
+    },
     'explain-code': {
         system:
             'You are a senior software engineer. Explain what the given code does clearly and ' +

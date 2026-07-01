@@ -252,6 +252,8 @@ tyr deploy --debug
 │   │   ├── Kernel.ts          # Command router and execution engine
 │   │   ├── Container.ts       # Dependency injection container
 │   │   ├── TyrError.ts        # Structured error type
+│   │   ├── util
+│   │   │   └── getenv.ts      # Helper: get environment variables
 │   │   └── sys/
 │   │       ├── gen.ts         # Built-in: scaffold a command
 │   │       ├── rem.ts         # Built-in: remove a command
@@ -259,16 +261,23 @@ tyr deploy --debug
 │   ├── commands/
 │   │   └── *.tyr.ts           # Your custom commands go here
 │   └── lib/
-│       ├── ShellManager.ts
-│       ├── FileSystemManager.ts
-│       ├── PackageManager.ts
-│       ├── DockerManager.ts
-│       ├── GitManager.ts
-│       ├── SystemManager.ts
-│       ├── SQLManager.ts
-│       └── WebManager.ts
-├── config/
-│   └── map.yml                # Command registry
+│   │   ├── AIContextManager.ts
+│   │   ├── AIVendorManager.ts
+│   │   ├── DockerManager.ts
+│   │   ├── FileSystemManager.ts
+│   │   ├── GitManager.ts
+│   │   ├── JiraManager.ts
+│   │   ├── MongoManager.ts
+│   │   ├── PackageManager.ts
+│   │   ├── PromptTemplateManager.ts
+│   │   ├── SetupManager.ts
+│   │   ├── ShellManager.ts
+│   │   ├── SQLManager.ts
+│   │   ├── SystemManager.ts
+│   │   ├── TokenManager.ts
+│   │   ├── WebManager.ts
+│   │   └── WorkspaceManager.ts
+|   └── index.ts               # Exports context
 └── tests/
     ├── setup.ts               # Mock context factory
     └── test-runner.ts         # Smoke test runner

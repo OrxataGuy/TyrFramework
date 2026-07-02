@@ -16,6 +16,7 @@ import { AIVendorManager } from '../src/lib/AIVendorManager.js';
 import { AIContextManager } from '../src/lib/AIContextManager.js';
 import { PromptTemplateManager } from '../src/lib/PromptTemplateManager.js';
 import { TokenManager } from '../src/lib/TokenManager.js';
+import { ChatManager } from '../src/lib/ChatManager.js';
 import { createLogger } from '../src/core/Logger.js';
 import { TyrContext } from '../src/core/Kernel.js';
 
@@ -30,6 +31,7 @@ import { ShellManagerTests } from '../src/lib/ShellManager.js';
 import { AIContextManagerTests } from '../src/lib/AIContextManager.js';
 import { PromptTemplateManagerTests } from '../src/lib/PromptTemplateManager.js';
 import { TokenManagerTests } from '../src/lib/TokenManager.js';
+import { ChatManagerTests } from '../src/lib/ChatManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,6 +79,7 @@ async function testManagers(): Promise<void> {
         { name: 'AIContextManager',       instance: aiContext,                                 tests: AIContextManagerTests },
         { name: 'PromptTemplateManager',  instance: new PromptTemplateManager(aiContext, logger), tests: PromptTemplateManagerTests },
         { name: 'TokenManager',           instance: new TokenManager(logger),                  tests: TokenManagerTests },
+        { name: 'ChatManager',            instance: new ChatManager(fs, logger),               tests: ChatManagerTests },
     ];
 
     for (const { name, instance, tests } of managers) {

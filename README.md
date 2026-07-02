@@ -173,6 +173,35 @@ tyr doc
 # → Open http://localhost:3000
 ```
 
+### `tyr chat [directory] [--port <n>] [--split <0-1>]`
+
+Opens a local web app with a chat pane and a file browser for `directory` (defaults to the current directory). You can attach images to a message, drag the divider between the two panes to resize them, and click any file in the browser to preview it. Messages are answered by the configured AI vendor (see `AIVendorManager`, below) by default.
+
+```bash
+tyr chat ./my-project --split 0.35
+# → Chat ready at: http://localhost:4646
+```
+
+Under the hood this is powered by `ChatManager`, injected into every command as `chat`. Write your own command to customise it:
+
+```typescript
+export default ({ chat, aiVendor, logger }: TyrContext) => {
+    return async (args: string[]) => {
+        chat.onMessage(async ({ message, history, dir }) => {
+            // Decide how to answer — call AIVendorManager, a local model, a script, etc.
+            const result = await aiVendor.complete([{ role: 'user', content: message.text }]);
+            return result.content;
+        });
+
+        chat.on('message:send', ({ message }) => logger.info(`User: ${message.text}`));
+        chat.on('message:response', ({ message }) => logger.info(`Assistant: ${message.text}`));
+
+        const session = await chat.open(args[0] ?? process.cwd(), { splitRatio: 0.4 });
+        logger.success(`Chat ready at: ${session.url}`);
+    };
+};
+```
+
 ---
 
 ## Context API Reference
@@ -263,6 +292,7 @@ tyr deploy --debug
 │   └── lib/
 │   │   ├── AIContextManager.ts
 │   │   ├── AIVendorManager.ts
+│   │   ├── ChatManager.ts
 │   │   ├── DockerManager.ts
 │   │   ├── FileSystemManager.ts
 │   │   ├── GitManager.ts

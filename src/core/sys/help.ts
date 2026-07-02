@@ -76,6 +76,7 @@ export default function help({ userRoot }: TyrContext) {
             { name: '--upgrade', description: 'Upgrades the tyr npm package.',                usage: 'tyr --upgrade' },
             { name: 'gen',       description: 'Generates a new command from a description using AI.', usage: 'tyr gen <name> "<description>"' },
             { name: 'doc',       description: 'Opens the framework documentation in the browser.', usage: 'tyr doc' },
+            { name: 'chat',      description: 'Opens an AI chat + file browser for a directory.',  usage: 'tyr chat [directory] [--port <n>] [--split <0-1>]' },
         ];
 
         console.log(`  ${bold}${yellow}Framework${reset}`);

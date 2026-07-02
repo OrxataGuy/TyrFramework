@@ -14,6 +14,7 @@ import { AIVendorManager } from '../lib/AIVendorManager.js';
 import { AIContextManager } from '../lib/AIContextManager.js';
 import { PromptTemplateManager } from '../lib/PromptTemplateManager.js';
 import { TokenManager } from '../lib/TokenManager.js';
+import { ChatManager } from '../lib/ChatManager.js';
 import { Logger, createLogger } from './Logger.js';
 
 import path from 'path';
@@ -39,6 +40,7 @@ export interface ServiceContainer {
     aiContext: AIContextManager;
     prompts: PromptTemplateManager;
     tokens: TokenManager;
+    chat: ChatManager;
 }
 
 export class Container {
@@ -77,6 +79,7 @@ export class Container {
             aiContext,
             prompts: new PromptTemplateManager(aiContext, logger),
             tokens: new TokenManager(logger),
+            chat: new ChatManager(fs, logger),
         };
     }
 

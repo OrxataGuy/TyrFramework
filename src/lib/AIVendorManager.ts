@@ -17,11 +17,15 @@ export type AIRole = 'system' | 'user' | 'assistant';
  *    formato (en Gemini, por ejemplo, es un id sintético generado por este manager, ya que la
  *    API de Gemini no da ids reales para las function calls).
  *  - 'tool_result': resultado de haber ejecutado una herramienta, para devolvérselo al modelo.
+ *  - 'image': imagen adjunta (p.ej. un attachment de chat). `data` es el contenido en base64 SIN
+ *    el prefijo `data:...;base64,`; `mediaType` es el MIME type (p.ej. 'image/png'). Solo válido
+ *    en mensajes de rol 'user' — los vendors no devuelven imágenes en sus respuestas.
  */
 export type AIContentBlock =
     | { type: 'text'; text: string }
     | { type: 'tool_use'; id: string; name: string; input: any }
-    | { type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean };
+    | { type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean }
+    | { type: 'image'; mediaType: string; data: string };
 
 export interface AIMessage {
     role: AIRole;
@@ -190,6 +194,7 @@ export class AIVendorManager {
         if (typeof content === 'string') return content;
         return content.map(block => {
             if (block.type === 'text') return { type: 'text', text: block.text };
+            if (block.type === 'image') return { type: 'image', source: { type: 'base64', media_type: block.mediaType, data: block.data } };
             if (block.type === 'tool_use') return { type: 'tool_use', id: block.id, name: block.name, input: block.input };
             return { type: 'tool_result', tool_use_id: block.tool_use_id, content: block.content, ...(block.is_error ? { is_error: true } : {}) };
         });
@@ -231,11 +236,19 @@ export class AIVendorManager {
 
             const toolResults = m.content.filter(b => b.type === 'tool_result') as Array<Extract<AIContentBlock, { type: 'tool_result' }>>;
             const text = m.content.filter(b => b.type === 'text').map(b => (b as any).text).join('');
+            const images = m.content.filter(b => b.type === 'image') as Array<Extract<AIContentBlock, { type: 'image' }>>;
 
             for (const tr of toolResults) {
                 result.push({ role: 'tool', tool_call_id: tr.tool_use_id, content: tr.content });
             }
-            if (text) {
+            if (images.length > 0) {
+                const parts: any[] = [];
+                if (text) parts.push({ type: 'text', text });
+                for (const img of images) {
+                    parts.push({ type: 'image_url', image_url: { url: `data:${img.mediaType};base64,${img.data}` } });
+                }
+                result.push({ role: m.role, content: parts });
+            } else if (text) {
                 result.push({ role: m.role, content: text });
             }
         }
@@ -283,6 +296,7 @@ export class AIVendorManager {
 
             const toolResults = m.content.filter(b => b.type === 'tool_result') as Array<Extract<AIContentBlock, { type: 'tool_result' }>>;
             const textBlocks = m.content.filter(b => b.type === 'text') as Array<Extract<AIContentBlock, { type: 'text' }>>;
+            const imageBlocks = m.content.filter(b => b.type === 'image') as Array<Extract<AIContentBlock, { type: 'image' }>>;
 
             if (toolResults.length > 0) {
                 result.push({
@@ -295,8 +309,14 @@ export class AIVendorManager {
                     })),
                 });
             }
-            if (textBlocks.length > 0) {
-                result.push({ role: 'user', parts: textBlocks.map(b => ({ text: b.text })) });
+            if (textBlocks.length > 0 || imageBlocks.length > 0) {
+                result.push({
+                    role: 'user',
+                    parts: [
+                        ...textBlocks.map(b => ({ text: b.text })),
+                        ...imageBlocks.map(b => ({ inlineData: { mimeType: b.mediaType, data: b.data } })),
+                    ],
+                });
             }
         }
 
